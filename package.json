@@ -8,11 +8,14 @@
     "start": "tsc -w --preserveWatchOutput"
   },
   "dependencies": {
-    "git-url-parse": "^11.1.2"
+    "git-url-parse": "^11.1.2",
+    "p-queue": "^6.3.0",
+    "toposort": "^2.0.2"
   },
   "devDependencies": {
     "@types/git-url-parse": "^9.0.0",
     "@types/node": "^13.13.2",
+    "@types/p-queue": "^3.2.1",
     "typescript": "^3.8.3"
   }
 }
