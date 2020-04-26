@@ -123,11 +123,13 @@ function getInternalDepsWithTask(
 
 const command = "build";
 
+// TODO: need to scope the tasks to the "command" and "packages" potentially
+
 const sortedTaskIds = toposort(taskGraph);
 
 console.log(sortedTaskIds);
 
-const q = new PQueue({ concurrency: 5 });
+const q = new PQueue({ concurrency: 15 });
 
 for (const taskId of sortedTaskIds) {
   q.add(() => generateTask(taskId));
