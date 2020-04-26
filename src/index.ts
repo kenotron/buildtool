@@ -5,52 +5,62 @@ import PQueue from "p-queue";
 
 import { PackageInfo, PackageInfos } from "./types/PackageInfo";
 import { spawn } from "child_process";
-
+import { PerformanceObserver, performance } from "perf_hooks";
 import toposort from "toposort";
+import Profiler from "@lerna/profiler";
 
 const cwd = process.cwd();
 
 const allPackages = getPackageInfos(cwd);
 
+interface TaskStats {
+  duration: number;
+}
+
 type TaskId = string;
 type TaskDeps = TaskId[];
 type TaskDepsMap = Map<TaskId, TaskDeps>;
 type Tasks = Map<TaskId, Promise<void>>;
+type TaskStatsMap = Map<TaskId, TaskStats>;
 
 const taskGraph: [string, string][] = [];
 
+const taskStatsMap: TaskStatsMap = new Map();
 const tasksDepsMap: TaskDepsMap = new Map();
 const tasks: Tasks = new Map();
 
+delete allPackages["office-online-ui"];
+
+const defaultPipeline = {
+  build: ["^build"],
+  // test: ["build"],
+};
+
+// Phase 1: identify and create task graph
 for (const [pkg, info] of Object.entries(allPackages)) {
-  if (info.pipeline) {
-    for (const [task, taskDeps] of Object.entries(info.pipeline)) {
-      const taskId = getTaskId(pkg, task);
+  const pipeline = info.pipeline || defaultPipeline;
 
-      if (!tasksDepsMap.has(taskId)) {
-        tasksDepsMap.set(taskId, []);
-      }
+  for (const [task, taskDeps] of Object.entries(pipeline)) {
+    const taskId = getTaskId(pkg, task);
 
-      for (const taskDep of taskDeps) {
-        if (taskDep.startsWith("^")) {
-          // add task dep from all the package deps within repo
-          const dependentPkgs = getInternalDepsWithTask(
-            info,
-            task,
-            allPackages
-          );
+    if (!tasksDepsMap.has(taskId)) {
+      tasksDepsMap.set(taskId, []);
+    }
 
-          const taskName = taskDep.slice(1);
+    for (const taskDep of taskDeps) {
+      if (taskDep.startsWith("^")) {
+        // add task dep from all the package deps within repo
+        const dependentPkgs = getInternalDepsWithTask(info, task, allPackages);
+        const taskName = taskDep.slice(1);
 
-          for (const depPkg of dependentPkgs) {
-            tasksDepsMap.get(taskId)!.push(getTaskId(depPkg, taskName));
-            taskGraph.push([getTaskId(depPkg, taskName), taskId]);
-          }
-        } else {
-          // add task dep from same package
-          tasksDepsMap.get(taskId)!.push(getTaskId(pkg, taskDep));
-          taskGraph.push([getTaskId(pkg, taskDep), taskId]);
+        for (const depPkg of dependentPkgs) {
+          tasksDepsMap.get(taskId)!.push(getTaskId(depPkg, taskName));
+          taskGraph.push([getTaskId(depPkg, taskName), taskId]);
         }
+      } else {
+        // add task dep from same package
+        tasksDepsMap.get(taskId)!.push(getTaskId(pkg, taskDep));
+        taskGraph.push([getTaskId(pkg, taskDep), taskId]);
       }
     }
   }
@@ -60,6 +70,7 @@ function generateTask(taskId: TaskId) {
   const taskDeps = tasksDepsMap.get(taskId)!;
   const task = () =>
     new Promise((resolve, reject) => {
+      performance.mark(`start:${taskId}`);
       const [pkg, task] = getPackageTaskFromId(taskId);
 
       console.log(`----- Running ${pkg}: ${task} -----`);
@@ -88,6 +99,14 @@ function generateTask(taskId: TaskId) {
       });
 
       cp.on("exit", (code) => {
+        performance.mark(`end:${taskId}`);
+
+        performance.measure(
+          `measure duration: ${taskId}`,
+          `start:${taskId}`,
+          `end:${taskId}`
+        );
+
         console.log(`----- Done ${pkg}: ${task} -----`);
         if (code === 0) {
           return resolve();
@@ -123,7 +142,7 @@ function getInternalDepsWithTask(
 
 const command = "build";
 
-// TODO: need to scope the tasks to the "command" and "packages" potentially
+// Phase 2: accept command and stuff graph into p-queue runner
 
 const sortedTaskIds = toposort(taskGraph);
 
@@ -131,8 +150,28 @@ console.log(sortedTaskIds);
 
 const q = new PQueue({ concurrency: 15 });
 
+const profiler = new Profiler({
+  concurrency: 15,
+});
+
 for (const taskId of sortedTaskIds) {
-  q.add(() => generateTask(taskId));
+  q.add(() => profiler.run(() => generateTask(taskId), taskId));
 }
 
-q.start();
+performance.mark("start");
+
+const obs = new PerformanceObserver((list, observer) => {
+  // Called once. `list` contains three items.
+  q.onIdle().then(() => {
+    profiler.output();
+
+    performance.mark("end");
+    performance.measure("build:test", "start", "end");
+
+    // Pull out all of the measurements.
+    console.log(list.getEntriesByType("measure"));
+
+    process.exit(0);
+  });
+});
+obs.observe({ entryTypes: ["mark"], buffered: true });

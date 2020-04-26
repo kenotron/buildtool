@@ -10,7 +10,8 @@
   "dependencies": {
     "git-url-parse": "^11.1.2",
     "p-queue": "^6.3.0",
-    "toposort": "^2.0.2"
+    "toposort": "^2.0.2",
+    "@lerna/profiler": "^3.20.0"
   },
   "devDependencies": {
     "@types/git-url-parse": "^9.0.0",

@@ -28,7 +28,7 @@ export function infoFromPackageJson(
     devDependencies: packageJson.devDependencies,
     peerDependencies: packageJson.peerDependencies,
     private: packageJson.private !== undefined ? packageJson.private : false,
-    pipeline: packageJson.pipeline !== undefined ? packageJson.pipeline : {},
+    pipeline: packageJson.pipeline,
     scripts: packageJson.scripts !== undefined ? packageJson.scripts : {},
   };
 }
