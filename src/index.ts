@@ -11,6 +11,9 @@ import Profiler from "@lerna/profiler";
 
 const cwd = process.cwd();
 
+// let's pretend this command is what we're doing
+const command = "test";
+
 const allPackages = getPackageInfos(cwd);
 
 interface TaskStats {
@@ -25,7 +28,6 @@ type TaskStatsMap = Map<TaskId, TaskStats>;
 
 const taskGraph: [string, string][] = [];
 
-const taskStatsMap: TaskStatsMap = new Map();
 const tasksDepsMap: TaskDepsMap = new Map();
 const tasks: Tasks = new Map();
 
@@ -33,10 +35,10 @@ delete allPackages["office-online-ui"];
 
 const defaultPipeline = {
   build: ["^build"],
-  // test: ["build"],
+  test: ["build"],
 };
 
-// Phase 1: identify and create task graph
+// Phase 1: identify and create a realized task dependency map (discovering)
 for (const [pkg, info] of Object.entries(allPackages)) {
   const pipeline = info.pipeline || defaultPipeline;
 
@@ -55,12 +57,38 @@ for (const [pkg, info] of Object.entries(allPackages)) {
 
         for (const depPkg of dependentPkgs) {
           tasksDepsMap.get(taskId)!.push(getTaskId(depPkg, taskName));
-          taskGraph.push([getTaskId(depPkg, taskName), taskId]);
         }
       } else {
         // add task dep from same package
         tasksDepsMap.get(taskId)!.push(getTaskId(pkg, taskDep));
-        taskGraph.push([getTaskId(pkg, taskDep), taskId]);
+      }
+    }
+  }
+}
+
+// Phase 2: using scoped entry points, generate the execution taskGraph (planning)
+
+// start taskStack with entry points (future: add scoped packages as well)
+const taskStack: TaskId[] = [];
+for (const taskId of tasksDepsMap.keys()) {
+  const [_, taskName] = getPackageTaskFromId(taskId);
+  if (taskName === command) {
+    taskStack.push(taskId);
+  }
+}
+
+const visited = new Set<TaskId>();
+
+while (taskStack.length > 0) {
+  const taskId = taskStack.pop()!;
+  visited.add(taskId);
+
+  const deps = tasksDepsMap.get(taskId);
+  if (deps) {
+    for (const depTaskId of deps!) {
+      if (!visited.has(depTaskId)) {
+        taskGraph.push([depTaskId, taskId]);
+        taskStack.push(depTaskId);
       }
     }
   }
@@ -89,21 +117,21 @@ function generateTask(taskId: TaskId) {
           });
 
           cp.stdout.on("data", (data) => {
-            // data
-            //   .toString()
-            //   .split(/\n/)
-            //   .forEach((line) => {
-            //     console.log(`${pkg}:${task}: ${line}`);
-            //   });
+            data
+              .toString()
+              .split(/\n/)
+              .forEach((line) => {
+                process.stdout.write(`${pkg}:${task}: ${line.trim()}\n`);
+              });
           });
 
           cp.stderr.on("data", (data) => {
-            // data
-            //   .toString()
-            //   .split(/\n/)
-            //   .forEach((line) => {
-            //     console.log(`${pkg}:${task}: ${line}`);
-            //   });
+            data
+              .toString()
+              .split(/\n/)
+              .forEach((line) => {
+                process.stderr.write(`${pkg}:${task}: ${line.trim()}\n`);
+              });
           });
 
           cp.on("exit", (code) => {
@@ -149,16 +177,15 @@ function getInternalDepsWithTask(
   );
 }
 
-const command = "build";
-
 // Phase 2: accept command and stuff graph into p-queue runner
 
-const sortedTaskIds = toposort(taskGraph);
+let sortedTaskIds = toposort(taskGraph);
 
 const q = new PQueue({ concurrency: 11 });
 
 const profiler = new Profiler({
   concurrency: 11,
+  outputDirectory: __dirname,
 });
 
 for (const taskId of sortedTaskIds) {
@@ -172,6 +199,8 @@ const obs = new PerformanceObserver((list, observer) => {
   // Called once. `list` contains three items.
   q.onIdle().then(() => {
     profiler.output();
+
+    console.log("output profiler");
 
     performance.mark("end");
     performance.measure("build:test", "start", "end");
