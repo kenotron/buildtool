@@ -68,57 +68,66 @@ for (const [pkg, info] of Object.entries(allPackages)) {
 
 function generateTask(taskId: TaskId) {
   const taskDeps = tasksDepsMap.get(taskId)!;
-  const task = () =>
-    new Promise((resolve, reject) => {
-      performance.mark(`start:${taskId}`);
-      const [pkg, task] = getPackageTaskFromId(taskId);
 
-      console.log(`----- Running ${pkg}: ${task} -----`);
+  const prereqPromise: Promise<void | void[]> = taskDeps
+    ? Promise.all(taskDeps.map((d) => tasks.get(d)!))
+    : Promise.resolve();
 
-      const cp = spawn("npm.cmd", ["run", task], {
-        cwd: path.dirname(allPackages[pkg].packageJsonPath),
-        stdio: "pipe",
-      });
+  tasks.set(
+    taskId,
+    prereqPromise.then(
+      (_: any) =>
+        new Promise<void>((resolve, reject) => {
+          performance.mark(`start:${taskId}`);
+          const [pkg, task] = getPackageTaskFromId(taskId);
 
-      cp.stdout.on("data", (data) => {
-        data
-          .toString()
-          .split(/\n/)
-          .forEach((line) => {
-            console.log(`${pkg}:${task}: ${line}`);
+          console.log(`----- Running ${pkg}: ${task} -----`);
+
+          const cp = spawn("npm.cmd", ["run", task], {
+            cwd: path.dirname(allPackages[pkg].packageJsonPath),
+            stdio: "pipe",
           });
-      });
 
-      cp.stderr.on("data", (data) => {
-        data
-          .toString()
-          .split(/\n/)
-          .forEach((line) => {
-            console.log(`${pkg}:${task}: ${line}`);
+          cp.stdout.on("data", (data) => {
+            // data
+            //   .toString()
+            //   .split(/\n/)
+            //   .forEach((line) => {
+            //     console.log(`${pkg}:${task}: ${line}`);
+            //   });
           });
-      });
 
-      cp.on("exit", (code) => {
-        performance.mark(`end:${taskId}`);
+          cp.stderr.on("data", (data) => {
+            // data
+            //   .toString()
+            //   .split(/\n/)
+            //   .forEach((line) => {
+            //     console.log(`${pkg}:${task}: ${line}`);
+            //   });
+          });
 
-        performance.measure(
-          `measure duration: ${taskId}`,
-          `start:${taskId}`,
-          `end:${taskId}`
-        );
+          cp.on("exit", (code) => {
+            performance.mark(`end:${taskId}`);
 
-        console.log(`----- Done ${pkg}: ${task} -----`);
-        if (code === 0) {
-          return resolve();
-        }
+            performance.measure(
+              `measure duration: ${taskId}`,
+              `start:${taskId}`,
+              `end:${taskId}`
+            );
 
-        reject();
-      });
-    });
+            console.log(`----- Done ${pkg}: ${task} -----`);
 
-  return taskDeps
-    ? Promise.all(taskDeps.map((d) => tasks.get(d))).then(task)
-    : task;
+            if (code === 0) {
+              return resolve();
+            }
+
+            reject();
+          });
+        })
+    )
+  );
+
+  return tasks.get(taskId);
 }
 
 function getTaskId(pkg: string, task: string) {
@@ -146,18 +155,17 @@ const command = "build";
 
 const sortedTaskIds = toposort(taskGraph);
 
-console.log(sortedTaskIds);
-
-const q = new PQueue({ concurrency: 15 });
+const q = new PQueue({ concurrency: 11 });
 
 const profiler = new Profiler({
-  concurrency: 15,
+  concurrency: 11,
 });
 
 for (const taskId of sortedTaskIds) {
   q.add(() => profiler.run(() => generateTask(taskId), taskId));
 }
 
+const start = Date.now();
 performance.mark("start");
 
 const obs = new PerformanceObserver((list, observer) => {
@@ -168,10 +176,14 @@ const obs = new PerformanceObserver((list, observer) => {
     performance.mark("end");
     performance.measure("build:test", "start", "end");
 
+    // Pull out all the measurements of marks
+    console.log(list.getEntriesByType("mark"));
+
     // Pull out all of the measurements.
     console.log(list.getEntriesByType("measure"));
 
+    console.log(Date.now() - start);
     process.exit(0);
   });
 });
-obs.observe({ entryTypes: ["mark"], buffered: true });
+obs.observe({ entryTypes: ["mark", "measure"], buffered: true });
