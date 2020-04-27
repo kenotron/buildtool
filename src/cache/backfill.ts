@@ -1,5 +1,5 @@
 import * as backfill from "backfill/lib/api";
-import { PackageInfo } from "./types/PackageInfo";
+import { PackageInfo } from "../types/PackageInfo";
 import path from "path";
 
 const hashes: { [key: string]: string } = {};
@@ -13,11 +13,8 @@ export async function computeHash(info: PackageInfo) {
   logger.setName(name);
   logger.setMode("verbose", "verbose");
 
+  // TODO: "hi" here needs to account for file contents of important config files & cmd & workspace root
   const hash = await backfill.computeHash(cwd, "hi", logger);
-
-  console.log(
-    `CEWRFJWOIEF:JE:FIJ:EFIJW:EFIJ:EFIJE:FOJWEFJWIEFJ:EJF:EIJF:EIJ:FEWF ${cwd} hash: ${hash}`
-  );
 
   hashes[cwd] = hash;
 }
