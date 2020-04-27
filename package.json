@@ -11,12 +11,20 @@
     "git-url-parse": "^11.1.2",
     "p-queue": "^6.3.0",
     "toposort": "^2.0.2",
-    "@lerna/profiler": "^3.20.0"
+    "@lerna/profiler": "^3.20.0",
+    "backfill": "4.0.2-a.0"
   },
   "devDependencies": {
     "@types/git-url-parse": "^9.0.0",
     "@types/node": "^13.13.2",
     "@types/p-queue": "^3.2.1",
     "typescript": "^3.8.3"
+  },
+  "resolutions": {
+    "backfill-logger": "3.0.1-a.0",
+    "backfill-config": "3.0.1-a.0",
+    "backfill-cache": "3.0.1-a.0",
+    "backfill-hasher": "4.0.2-a.0",
+    "backfill-utils-dotenv": "3.0.1-a.0"
   }
 }
