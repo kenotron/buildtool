@@ -5,6 +5,25 @@ import { getPackageTaskFromId } from "./taskId";
 import { generateTask } from "./generateTask";
 import { generateNpmTask } from "./generateNpmTask";
 import { computeHash, fetchBackfill, putBackfill } from "../cache/backfill";
+import { performance, PerformanceObserver } from "perf_hooks";
+import { getAvailableTasks } from "./getAvailableTasks";
+
+function queueAvailableTasks(q: PQueue, context: RunContext) {
+  const tasks = getAvailableTasks(context);
+
+  if (!tasks) {
+    return;
+  }
+
+  for (const taskId of tasks) {
+    q.add(() => {
+      return generateTask(taskId, context)!.then(() => {
+        context.completedTasks.add(taskId);
+        queueAvailableTasks(q, context);
+      });
+    });
+  }
+}
 
 export function runTasks(sortedTaskIds: string[], context: RunContext) {
   const { concurrency, measures } = context;
@@ -25,57 +44,34 @@ export function runTasks(sortedTaskIds: string[], context: RunContext) {
 
   obs.observe({ entryTypes: ["measure"], buffered: true });
 
-  for (const taskId of sortedTaskIds) {
-    const [pkg, task] = getPackageTaskFromId(taskId);
-
-    switch (task) {
-      case "_computeHash":
-        q.add(() =>
-          profiler.run(() => generateTask(taskId, computeHash, context))
-        );
-        break;
-
-      case "_fetch":
-        q.add(() =>
-          profiler.run(() => generateTask(taskId, fetchBackfill, context))
-        );
-        break;
-
-      case "_put":
-        q.add(() =>
-          profiler.run(() => generateTask(taskId, putBackfill, context))
-        );
-        break;
-
-      default:
-        q.add(() =>
-          profiler.run(() => generateNpmTask(taskId, context), taskId)
-        );
-        break;
-    }
-  }
-
   const start = Date.now();
   performance.mark("start");
 
-  // Called once. `list` contains three items.
-  q.onIdle().then(() => {
-    profiler.output();
+  queueAvailableTasks(q, context);
 
-    performance.mark("end");
+  // for (const taskId of sortedTaskIds) {
+  //   const [pkg, task] = getPackageTaskFromId(taskId);
+  //   q.add(() => profiler.run(() => generateTask(taskId, context)));
+  // }
 
-    performance.measure("build:test", "start", "end");
+  // // Called once. `list` contains three items.
+  // q.onIdle().then(() => {
+  //   profiler.output();
 
-    console.log(
-      measures
-        .map((measure) => {
-          const [pkg, task] = getPackageTaskFromId(measure.name);
-          return `=== ${pkg} - ${task}: ${measure.duration / 1000}s`;
-        })
-        .join("\n")
-    );
+  //   performance.mark("end");
 
-    console.log(`${(Date.now() - start) / 1000}s`);
-    process.exit(0);
-  });
+  //   performance.measure("build:test", "start", "end");
+
+  //   console.log(
+  //     measures
+  //       .map((measure) => {
+  //         const [pkg, task] = getPackageTaskFromId(measure.name);
+  //         return `=== ${pkg} - ${task}: ${measure.duration / 1000}s`;
+  //       })
+  //       .join("\n")
+  //   );
+
+  //   console.log(`${(Date.now() - start) / 1000}s`);
+  //   process.exit(0);
+  // });
 }

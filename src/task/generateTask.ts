@@ -1,54 +1,47 @@
 import { TaskId } from "../types/Task";
-import { PackageInfo } from "../types/PackageInfo";
+
 import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
 
-export function generateTask(
-  taskId: TaskId,
-  fn: (info: PackageInfo) => void | Promise<void>,
-  context: RunContext
-) {
-  const { allPackages, tasks, taskDepsMap } = context;
-  const taskDeps = taskDepsMap.get(taskId)!;
-  const prereqPromise: Promise<void | void[]> = taskDeps
-    ? Promise.all(taskDeps.map((d) => tasks.get(d)!))
-    : Promise.resolve();
+import {
+  ComputeHashTask,
+  CacheFetchTask,
+  CachePutTask,
+} from "../cache/cacheTasks";
+import { generateNpmTask } from "./generateNpmTask";
+import { computeHash, fetchBackfill, putBackfill } from "../cache/backfill";
+import { generateFnTask } from "./generateFnTask";
 
-  tasks.set(
-    taskId,
-    prereqPromise.then(
-      (_: any) =>
-        new Promise<void>((resolve, reject) => {
-          performance.mark(`start:${taskId}`);
-          const [pkg, task] = getPackageTaskFromId(taskId);
+export function generateTask(taskId: TaskId, context: RunContext) {
+  const { tasks } = context;
 
-          console.log(`----- Running ${pkg}: ${task} -----`);
+  if (tasks.has(taskId)) {
+    return tasks.get(taskId);
+  }
 
-          const results = fn(allPackages[pkg]);
+  const [_pkg, task] = getPackageTaskFromId(taskId);
 
-          if (results instanceof Promise) {
-            results.then(
-              () => {
-                console.log(`----- Done ${pkg}: ${task} -----`);
-                resolve();
-              },
-              (err) => {
-                console.log(`----- FAILED ${pkg}: ${task} -----`);
-                console.log(err);
-                reject();
-              }
-            );
-          } else {
-            console.log(`----- Done ${pkg}: ${task} -----`);
-            resolve();
-          }
-        }),
-      (err) => {
-        const [pkg, task] = getPackageTaskFromId(taskId);
-        console.log(`----- FAILED ${pkg}: ${task} -----`);
-      }
-    )
-  );
+  let taskPromise: Promise<void>;
+
+  switch (task) {
+    case ComputeHashTask:
+      taskPromise = generateFnTask(taskId, computeHash, context)!;
+      break;
+
+    case CacheFetchTask:
+      taskPromise = generateFnTask(taskId, fetchBackfill, context)!;
+      break;
+
+    case CachePutTask:
+      taskPromise = generateFnTask(taskId, putBackfill, context)!;
+      break;
+
+    default:
+      taskPromise = generateNpmTask(taskId, context)!;
+      break;
+  }
+
+  tasks.set(taskId, taskPromise);
 
   return tasks.get(taskId);
 }

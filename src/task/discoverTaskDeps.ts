@@ -1,5 +1,3 @@
-import { PackageInfos } from "../types/PackageInfo";
-import { ToolOptions } from "../types/ToolOptions";
 import { getInternalDepsWithTask } from "../monorepo/internalDeps";
 import { getTaskId } from "./taskId";
 import { RunContext } from "../types/RunContext";

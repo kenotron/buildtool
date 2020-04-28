@@ -13,7 +13,7 @@ import {
  * @param context
  */
 export function getSortedTaskIds(context: RunContext) {
-  const { command, taskDepsMap, allPackages } = context;
+  const { command, taskDepsMap } = context;
 
   // start taskStack with entry points (future: add scoped packages as well)
   const taskStack: TaskId[] = [];
