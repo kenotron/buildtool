@@ -2,6 +2,11 @@ import { RunContext } from "../types/RunContext";
 import { TaskId } from "../types/Task";
 import { getPackageTaskFromId, getTaskId } from "./taskId";
 import toposort from "toposort";
+import {
+  ComputeHashTask,
+  CacheFetchTask,
+  CachePutTask,
+} from "../cache/cacheTasks";
 
 /**
  * Using scoped entry points, generate the execution taskGraph (planning)
@@ -18,12 +23,6 @@ export function getSortedTaskIds(context: RunContext) {
     if (taskName === command) {
       taskStack.push(taskId);
     }
-  }
-
-  for (const pkg of Object.keys(allPackages)) {
-    taskStack.push(getTaskId(pkg, "_computeHash"));
-    taskStack.push(getTaskId(pkg, "_fetch"));
-    taskStack.push(getTaskId(pkg, "_put"));
   }
 
   const visited = new Set<TaskId>();

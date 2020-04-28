@@ -1,6 +1,6 @@
 import os from "os";
 import { getPackageInfos } from "./monorepo/getPackageInfos";
-import { injectCacheTasks } from "./cache/injectCacheTasks";
+import { injectCacheTaskDepsMap, getCacheTaskIds } from "./cache/cacheTasks";
 import { RunContext } from "./types/RunContext";
 import { discoverTaskDeps } from "./task/discoverTaskDeps";
 import { getSortedTaskIds } from "./task/getSortedTaskIds";
@@ -22,8 +22,11 @@ const context: RunContext = {
   measures: [],
 };
 
-injectCacheTasks(context);
+injectCacheTaskDepsMap(context);
 discoverTaskDeps(context);
+
 const sortedTaskIds = getSortedTaskIds(context);
+
+sortedTaskIds.splice(0, 0, getCacheTaskIds(context));
 
 runTasks(sortedTaskIds, context);
