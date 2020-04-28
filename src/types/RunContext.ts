@@ -1,5 +1,8 @@
 import { TaskDepsMap, Tasks } from "./Task";
 import { PackageInfos } from "./PackageInfo";
+import PQueue from "p-queue";
+import Profiler from "@lerna/profiler";
+import { PerformanceEntry } from "perf_hooks";
 
 export interface RunContext {
   taskDepsMap: TaskDepsMap;
@@ -9,5 +12,7 @@ export interface RunContext {
   concurrency: number;
   packageScope: string[];
   defaultPipeline: { [task: string]: string[] };
-  measures: PerformanceMeasure[];
+  measures: PerformanceEntry[];
+  queue: PQueue;
+  profiler: Profiler;
 }

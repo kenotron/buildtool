@@ -1,18 +1,14 @@
-import { findPackageRoot, findGitRoot } from "../paths";
+import { findGitRoot } from "../paths";
 import fs from "fs";
 import path from "path";
-import { listAllTrackedFiles } from "../git";
 import { PackageInfos } from "../types/PackageInfo";
 import { infoFromPackageJson } from "./infoFromPackageJson";
-
-let allPackages: PackageInfos = {};
+import { getAllPackageJsonFiles } from "./workspaces";
 
 export function getPackageInfos(cwd: string) {
+  const packageJsonFiles = getAllPackageJsonFiles(cwd);
   const gitRoot = findGitRoot(cwd)!;
-  const packageJsonFiles = listAllTrackedFiles(
-    ["**/package.json", "package.json"],
-    gitRoot
-  );
+
   const packageInfos: PackageInfos = {};
   if (packageJsonFiles && packageJsonFiles.length > 0) {
     packageJsonFiles.forEach((packageJsonPath) => {
@@ -33,22 +29,8 @@ export function getPackageInfos(cwd: string) {
         );
       }
     });
-  } else {
-    const packageJsonFullPath = path.join(
-      gitRoot,
-      findPackageRoot(cwd)!,
-      "package.json"
-    );
-    const packageJson = JSON.parse(
-      fs.readFileSync(packageJsonFullPath, "utf-8")
-    );
-    packageInfos[packageJson.name] = infoFromPackageJson(
-      packageJson,
-      packageJsonFullPath
-    );
+    return packageInfos;
   }
 
-  allPackages = packageInfos;
-
-  return packageInfos;
+  return {};
 }

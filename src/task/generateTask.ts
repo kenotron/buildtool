@@ -2,53 +2,24 @@ import { TaskId } from "../types/Task";
 import { PackageInfo } from "../types/PackageInfo";
 import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
+import { performance } from "perf_hooks";
 
-export function generateTask(
+export async function generateTask(
   taskId: TaskId,
   fn: (info: PackageInfo) => void | Promise<void>,
   context: RunContext
 ) {
-  const { allPackages, tasks, taskDepsMap } = context;
-  const taskDeps = taskDepsMap.get(taskId)!;
-  const prereqPromise: Promise<void | void[]> = taskDeps
-    ? Promise.all(taskDeps.map((d) => tasks.get(d)!))
-    : Promise.resolve();
+  const { allPackages, queue, profiler } = context;
 
-  tasks.set(
-    taskId,
-    prereqPromise.then(
-      (_: any) =>
-        new Promise<void>((resolve, reject) => {
-          performance.mark(`start:${taskId}`);
-          const [pkg, task] = getPackageTaskFromId(taskId);
+  const [pkg, task] = getPackageTaskFromId(taskId);
 
-          console.log(`----- Running ${pkg}: ${task} -----`);
+  await queue.add(async () => {
+    performance.mark(`start:${taskId}`);
+    console.log(`----- Running ${pkg}: ${task} -----`);
 
-          const results = fn(allPackages[pkg]);
+    await profiler.run(() => fn(allPackages[pkg]), taskId);
 
-          if (results instanceof Promise) {
-            results.then(
-              () => {
-                console.log(`----- Done ${pkg}: ${task} -----`);
-                resolve();
-              },
-              (err) => {
-                console.log(`----- FAILED ${pkg}: ${task} -----`);
-                console.log(err);
-                reject();
-              }
-            );
-          } else {
-            console.log(`----- Done ${pkg}: ${task} -----`);
-            resolve();
-          }
-        }),
-      (err) => {
-        const [pkg, task] = getPackageTaskFromId(taskId);
-        console.log(`----- FAILED ${pkg}: ${task} -----`);
-      }
-    )
-  );
-
-  return tasks.get(taskId);
+    console.log(`----- Done ${pkg}: ${task} -----`);
+    performance.mark(`end:${taskId}`);
+  });
 }

@@ -6,6 +6,7 @@ import path from "path";
 
 import { cacheHits } from "../cache/backfill";
 import { RunContext } from "../types/RunContext";
+import { performance } from "perf_hooks";
 
 export function generateNpmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
@@ -49,8 +50,6 @@ export function generateNpmTask(taskId: TaskId, context: RunContext) {
           performance.mark(`end:${taskId}`);
 
           performance.measure(`${taskId}`, `start:${taskId}`, `end:${taskId}`);
-
-          console.log(`----- Done ${pkg}: ${task} -----`);
 
           if (code === 0) {
             return resolve();
