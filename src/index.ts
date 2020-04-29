@@ -11,7 +11,7 @@ const concurrency = os.cpus().length - 1;
 
 const context: RunContext = {
   allPackages: getPackageInfos(process.cwd()),
-  command: "build",
+  command: "ut",
   concurrency,
   defaultPipeline: {
     clean: [],
@@ -28,6 +28,7 @@ const context: RunContext = {
     concurrency,
     outputDirectory: process.cwd(),
   }),
+  taskLogs: new Map(),
 };
 
 // injectCacheTaskDepsMap(context);

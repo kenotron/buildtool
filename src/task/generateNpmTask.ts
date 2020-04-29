@@ -7,6 +7,7 @@ import path from "path";
 import { cacheHits } from "../cache/backfill";
 import { RunContext } from "../types/RunContext";
 import { performance } from "perf_hooks";
+import { reportTaskLog } from "../reporter/ansiReporter";
 
 export function generateNpmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
@@ -29,9 +30,10 @@ export function generateNpmTask(taskId: TaskId, context: RunContext) {
             .toString()
             .split(/\n/)
             .forEach((line) => {
-              if (line.trim()) {
-                process.stdout.write(`${pkg}:${task}: ${line.trim()}\n`);
-              }
+              // if (line.trim()) {
+              //   process.stdout.write(`${pkg}:${task}: ${line.trim()}\n`);
+              // }
+              reportTaskLog(taskId, line, context);
             });
         });
 
@@ -40,9 +42,11 @@ export function generateNpmTask(taskId: TaskId, context: RunContext) {
             .toString()
             .split(/\n/)
             .forEach((line) => {
-              if (line.trim()) {
-                process.stderr.write(`${pkg}:${task}: ${line.trim()}\n`);
-              }
+              // if (line.trim()) {
+              //   process.stderr.write(`${pkg}:${task}: ${line.trim()}\n`);
+              // }
+
+              reportTaskLog(taskId, line, context);
             });
         });
 

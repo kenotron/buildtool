@@ -15,11 +15,11 @@ export async function generateTask(
 
   await queue.add(async () => {
     performance.mark(`start:${taskId}`);
-    console.log(`----- Running ${pkg}: ${task} -----`);
+    //console.log(`----- Running ${pkg}: ${task} -----`);
 
     await profiler.run(() => fn(allPackages[pkg]), taskId);
 
-    console.log(`----- Done ${pkg}: ${task} -----`);
+    //console.log(`----- Done ${pkg}: ${task} -----`);
     performance.mark(`end:${taskId}`);
   });
 }

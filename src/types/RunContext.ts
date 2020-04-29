@@ -1,4 +1,4 @@
-import { TaskDepsMap, Tasks } from "./Task";
+import { TaskDepsMap, Tasks, TaskId } from "./Task";
 import { PackageInfos } from "./PackageInfo";
 import PQueue from "p-queue";
 import Profiler from "@lerna/profiler";
@@ -15,4 +15,5 @@ export interface RunContext {
   measures: PerformanceEntry[];
   queue: PQueue;
   profiler: Profiler;
+  taskLogs: Map<TaskId, string[]>;
 }
