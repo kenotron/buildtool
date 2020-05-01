@@ -7,7 +7,7 @@ import { runTasks } from "./task/taskRunner";
 import PQueue from "p-queue";
 import Profiler from "@lerna/profiler";
 
-const concurrency = os.cpus().length - 1;
+const concurrency = 1; /*os.cpus().length - 1;*/
 
 const context: RunContext = {
   allPackages: getPackageInfos(process.cwd()),

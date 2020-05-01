@@ -14,7 +14,7 @@ export async function computeHash(info: PackageInfo) {
   logger.setMode("verbose", "verbose");
 
   // TODO: "hi" here needs to account for file contents of important config files & cmd & workspace root
-  const hash = await backfill.computeHash(cwd, "hi", logger);
+  const hash = await backfill.computeHash(cwd, logger, "hi");
 
   hashes[cwd] = hash;
 }
