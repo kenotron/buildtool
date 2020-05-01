@@ -1,17 +1,15 @@
-import os from "os";
 import { getPackageInfos } from "./monorepo/getPackageInfos";
-// import { injectCacheTaskDepsMap, getCacheTaskIds } from "./cache/cacheTasks";
 import { RunContext } from "./types/RunContext";
 import { discoverTaskDeps } from "./task/discoverTaskDeps";
 import { runTasks } from "./task/taskRunner";
-import PQueue from "p-queue";
 import Profiler from "@lerna/profiler";
+import os from "os";
 
-const concurrency = 1; /*os.cpus().length - 1;*/
+const concurrency = os.cpus().length - 1;
 
 const context: RunContext = {
   allPackages: getPackageInfos(process.cwd()),
-  command: "ut",
+  command: "build",
   concurrency,
   defaultPipeline: {
     clean: [],
@@ -19,11 +17,10 @@ const context: RunContext = {
     build: ["^build"],
     ut: ["build"],
   },
-  taskDepsMap: new Map(),
+  taskDepsGraph: [],
   tasks: new Map(),
   packageScope: [],
   measures: [],
-  queue: new PQueue({ concurrency }),
   profiler: new Profiler({
     concurrency,
     outputDirectory: process.cwd(),
@@ -31,7 +28,6 @@ const context: RunContext = {
   taskLogs: new Map(),
 };
 
-// injectCacheTaskDepsMap(context);
 discoverTaskDeps(context);
 
 runTasks(context);

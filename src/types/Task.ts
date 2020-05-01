@@ -1,4 +1,7 @@
 export type TaskId = string;
 export type TaskDeps = TaskId[];
-export type TaskDepsMap = Map<TaskId, TaskDeps>;
-export type Tasks = Map<TaskId, Promise<void>>;
+
+/** subject, dependent (e.g. [test, build]) */
+export type TaskDepsGraph = [TaskId, TaskId][];
+
+export type Tasks = Map<TaskId, (TaskId) => Promise<void>>;

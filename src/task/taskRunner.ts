@@ -1,14 +1,16 @@
 import { RunContext } from "../types/RunContext";
-import { getPackageTaskFromId, getTaskId } from "./taskId";
-import { generateTask } from "./generateTask";
-import { generateNpmTask } from "./generateNpmTask";
-import { computeHash, fetchBackfill, putBackfill } from "../cache/backfill";
-import { ComputeHashTask } from "../cache/cacheTasks";
+import { getPackageTaskFromId } from "./taskId";
 import { PerformanceObserver, PerformanceEntry, performance } from "perf_hooks";
-import { TaskId } from "../types/Task";
+import {
+  generatePreCommandTasks,
+  generatePostCommandTasks,
+} from "../cache/cacheTasks";
+
+import { cacheHits } from "../cache/backfill";
+import pGraph from "p-graph";
 
 export async function runTasks(context: RunContext) {
-  const { measures, queue, profiler, allPackages, command } = context;
+  const { measures, profiler, command } = context;
 
   const obs = new PerformanceObserver((list, observer) => {
     // Pull out all of the measurements.
@@ -19,89 +21,58 @@ export async function runTasks(context: RunContext) {
 
   obs.observe({ entryTypes: ["measure"], buffered: true });
 
-  const leaves: TaskId[] = [];
-  for (const [pkg, info] of Object.entries(allPackages)) {
-    if (info.scripts && info.scripts[command]) {
-      leaves.push(getTaskId(pkg, command));
-    }
-  }
-
   const start = Date.now();
   performance.mark("start");
 
-  await Promise.all(leaves.map((taskId) => executeTask(taskId, context)));
+  const preCommandTasks = generatePreCommandTasks(context);
 
-  // Called once. `list` contains three items.
-  queue.onIdle().then(() => {
-    profiler.output();
+  console.log("Backfilling cache");
 
-    performance.mark("end");
+  await pGraph(preCommandTasks.tasks, preCommandTasks.taskDepsGraph, {
+    concurrency: context.concurrency,
+  }).run();
 
-    performance.measure("build:test", "start", "end");
+  console.log("Executing ", context.command);
 
-    console.log(
-      measures
-        .map((measure) => {
-          const [pkg, task] = getPackageTaskFromId(measure.name);
-          return `=== ${pkg} - ${task}: ${measure.duration / 1000}s`;
-        })
-        .join("\n")
-    );
+  await pGraph(context.tasks, context.taskDepsGraph, {
+    concurrency: context.concurrency,
+  }).run((graph) => {
+    const taskIds = [...graph.keys()].filter((k) => {
+      const [pkg, task] = getPackageTaskFromId(k);
+      return task === command && !cacheHits[pkg];
+    });
 
-    console.log(`${(Date.now() - start) / 1000}s`);
-    process.exit(0);
+    return taskIds;
   });
-}
 
-/**
- * Recursive step to set up promises for all the dependent runs
- * @param taskId
- * @param context
- */
-function executeTask(taskId: string, context: RunContext) {
-  const { taskDepsMap, tasks } = context;
+  console.log("Saving cache");
 
-  if (tasks.has(taskId)) {
-    return tasks.get(taskId);
+  const postCommandTasks = generatePostCommandTasks(context);
+  try {
+    await pGraph(postCommandTasks.tasks, postCommandTasks.taskDepsGraph, {
+      concurrency: context.concurrency,
+    }).run();
+  } catch (e) {
+    console.error("error: ", e);
   }
 
-  let taskPromise: Promise<any> = Promise.resolve();
+  console.log("Finished ");
 
-  const deps = taskDepsMap.get(taskId);
+  profiler.output();
 
-  if (deps) {
-    taskPromise = taskPromise.then(() =>
-      Promise.all(deps.map((depTaskId) => executeTask(depTaskId, context)))
-    );
-  }
+  performance.mark("end");
 
-  taskPromise = taskPromise.then(() => createTask(taskId, context));
+  performance.measure("build:test", "start", "end");
 
-  tasks.set(taskId, taskPromise);
+  console.log(
+    measures
+      .map((measure) => {
+        const [pkg, task] = getPackageTaskFromId(measure.name);
+        return `=== ${pkg} - ${task}: ${measure.duration / 1000}s`;
+      })
+      .join("\n")
+  );
 
-  return taskPromise;
-}
-
-/**
- * Create task wraps the queueing, returns the promise for completion of the task ultimately
- * @param taskId
- * @param context
- */
-function createTask(taskId: string, context: RunContext) {
-  const { queue, profiler } = context;
-  const [pkg, task] = getPackageTaskFromId(taskId);
-
-  switch (task) {
-    case ComputeHashTask:
-      return generateTask(taskId, computeHash, context);
-
-    case "_fetch":
-      return generateTask(taskId, fetchBackfill, context);
-
-    case "_put":
-      return generateTask(taskId, putBackfill, context);
-
-    default:
-      return generateNpmTask(taskId, context);
-  }
+  console.log(`${(Date.now() - start) / 1000}s`);
+  process.exit(0);
 }

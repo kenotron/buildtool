@@ -8,11 +8,12 @@ import { cacheHits } from "../cache/backfill";
 import { RunContext } from "../types/RunContext";
 import { performance } from "perf_hooks";
 import { reportTaskLog } from "../reporter/ansiReporter";
+import { taskWrapper } from "./taskWrapper";
 
-export function generateNpmTask(taskId: TaskId, context: RunContext) {
+export function npmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
   const { allPackages } = context;
-  return generateTask(
+  return taskWrapper(
     taskId,
     () =>
       new Promise((resolve, reject) => {

@@ -1,25 +1,34 @@
-import { TaskId } from "../types/Task";
-import { PackageInfo } from "../types/PackageInfo";
 import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
-import { performance } from "perf_hooks";
 
-export async function generateTask(
-  taskId: TaskId,
-  fn: (info: PackageInfo) => void | Promise<void>,
-  context: RunContext
-) {
-  const { allPackages, queue, profiler } = context;
+import {
+  ComputeHashTask,
+  CacheFetchTask,
+  CachePutTask,
+} from "../cache/cacheTasks";
+import { computeHash, fetchBackfill, putBackfill } from "../cache/backfill";
+import { npmTask } from "./npmTask";
+import { taskWrapper } from "./taskWrapper";
 
-  const [pkg, task] = getPackageTaskFromId(taskId);
+/**
+ * Create task wraps the queueing, returns the promise for completion of the task ultimately
+ * @param taskId
+ * @param context
+ */
+export function generateTask(taskId: string, context: RunContext) {
+  const [_, task] = getPackageTaskFromId(taskId);
 
-  await queue.add(async () => {
-    performance.mark(`start:${taskId}`);
-    //console.log(`----- Running ${pkg}: ${task} -----`);
+  switch (task) {
+    case ComputeHashTask:
+      return taskWrapper(taskId, computeHash, context);
 
-    await profiler.run(() => fn(allPackages[pkg]), taskId);
+    case CacheFetchTask:
+      return taskWrapper(taskId, fetchBackfill, context);
 
-    //console.log(`----- Done ${pkg}: ${task} -----`);
-    performance.mark(`end:${taskId}`);
-  });
+    case CachePutTask:
+      return taskWrapper(taskId, putBackfill, context);
+
+    default:
+      return npmTask(taskId, context);
+  }
 }
