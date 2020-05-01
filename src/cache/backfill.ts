@@ -12,10 +12,9 @@ export async function computeHash(info: PackageInfo, context: RunContext) {
   const name = require(path.join(cwd, "package.json")).name;
 
   logger.setName(name);
-  // logger.setMode("verbose", "info");
 
-  // TODO: "hi" here needs to account for file contents of important config files & cmd & workspace root
-  const hash = await backfill.computeHash(cwd, logger, context.command + "1");
+  // TODO: needs to account for file contents of important config files & cmd & workspace root
+  const hash = await backfill.computeHash(cwd, logger, context.command + "2");
 
   hashes[cwd] = hash;
 }
@@ -37,7 +36,12 @@ export async function putBackfill(info: PackageInfo) {
 
   const logger = backfill.makeLogger("info", process.stdout, process.stderr);
   const hash = hashes[cwd];
-  await backfill.put(cwd, hash, logger);
+
+  try {
+    await backfill.put(cwd, hash, logger);
+  } catch (e) {
+    // here we swallow put errors because backfill will throw just because the output directories didn't exist
+  }
 }
 
 export { cacheHits };

@@ -24,15 +24,17 @@ export async function runTasks(context: RunContext) {
   const start = Date.now();
   performance.mark("start");
 
-  const preCommandTasks = generatePreCommandTasks(context);
+  // const preCommandTasks = generatePreCommandTasks(context);
 
-  console.log("Backfilling cache");
+  // console.log("Backfilling cache");
 
-  await pGraph(preCommandTasks.tasks, preCommandTasks.taskDepsGraph, {
-    concurrency: context.concurrency,
-  }).run();
+  // await pGraph(preCommandTasks.tasks, preCommandTasks.taskDepsGraph, {
+  //   concurrency: context.concurrency,
+  // }).run();
 
-  console.log("Executing ", context.command);
+  // console.log(`Cache restore took: ${(Date.now() - start) / 1000}s`);
+
+  console.log(`Executing ${context.command}`);
 
   await pGraph(context.tasks, context.taskDepsGraph, {
     concurrency: context.concurrency,
@@ -45,16 +47,16 @@ export async function runTasks(context: RunContext) {
     return taskIds;
   });
 
-  console.log("Saving cache");
+  // console.log("Saving cache");
 
-  const postCommandTasks = generatePostCommandTasks(context);
-  try {
-    await pGraph(postCommandTasks.tasks, postCommandTasks.taskDepsGraph, {
-      concurrency: context.concurrency,
-    }).run();
-  } catch (e) {
-    console.error("error: ", e);
-  }
+  // const postCommandTasks = generatePostCommandTasks(context);
+  // try {
+  //   await pGraph(postCommandTasks.tasks, postCommandTasks.taskDepsGraph, {
+  //     concurrency: context.concurrency,
+  //   }).run();
+  // } catch (e) {
+  //   console.error("error: ", e);
+  // }
 
   console.log("Finished ");
 
