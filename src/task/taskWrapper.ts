@@ -15,12 +15,12 @@ export async function taskWrapper(
   const [pkg, task] = getPackageTaskFromId(taskId);
 
   performance.mark(`start:${taskId}`);
-  console.log(`----- Running ${pkg}: ${task} -----`);
+  //console.log(`----- Running ${pkg}: ${task} -----`);
 
   if (!cacheHits[pkg]) {
     await profiler.run(() => fn(allPackages[pkg], context), taskId);
   }
 
-  console.log(`----- Done ${pkg}: ${task} -----`);
+  //console.log(`----- Done ${pkg}: ${task} -----`);
   performance.mark(`end:${taskId}`);
 }

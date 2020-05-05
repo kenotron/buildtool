@@ -2,6 +2,7 @@ import { TaskDepsGraph, Tasks, TaskId } from "./Task";
 import { PackageInfos } from "./PackageInfo";
 import Profiler from "@lerna/profiler";
 import { PerformanceEntry } from "perf_hooks";
+import PQueue from "p-queue";
 
 export interface RunContext {
   taskDepsGraph: TaskDepsGraph;
@@ -14,4 +15,5 @@ export interface RunContext {
   measures: PerformanceEntry[];
   profiler: Profiler;
   taskLogs: Map<TaskId, string[]>;
+  queue: PQueue;
 }

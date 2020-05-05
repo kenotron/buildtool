@@ -16,6 +16,7 @@ import { taskWrapper } from "./taskWrapper";
  * @param context
  */
 export function generateTask(taskId: string, context: RunContext) {
+  const { queue } = context;
   const [_, task] = getPackageTaskFromId(taskId);
 
   switch (task) {
@@ -29,6 +30,6 @@ export function generateTask(taskId: string, context: RunContext) {
       return taskWrapper(taskId, putBackfill, context);
 
     default:
-      return npmTask(taskId, context);
+      return queue.add(npmTask(taskId, context));
   }
 }

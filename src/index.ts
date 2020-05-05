@@ -4,6 +4,7 @@ import { discoverTaskDeps } from "./task/discoverTaskDeps";
 import { runTasks } from "./task/taskRunner";
 import Profiler from "@lerna/profiler";
 import os from "os";
+import PQueue from "p-queue/dist";
 
 const concurrency = os.cpus().length - 1;
 
@@ -26,6 +27,7 @@ const context: RunContext = {
     outputDirectory: process.cwd(),
   }),
   taskLogs: new Map(),
+  queue: new PQueue({ concurrency }),
 };
 
 discoverTaskDeps(context);
