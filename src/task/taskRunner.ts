@@ -18,14 +18,18 @@ export async function runTasks(context: RunContext) {
   initializePerformance(context);
   markStart("all");
 
-  console.log(`Executing ${context.command}`);
+  console.log(`Executing command "${context.command}"`);
 
   generateCacheTasks(context);
 
   await pGraph(context.tasks, context.taskDepsGraph).run((graph) => {
     const taskIds = [...graph.keys()].filter((k) => {
       const [pkg, task] = getPackageTaskFromId(k);
-      return task === command && !cacheHits[pkg];
+      return (
+        task === command &&
+        !cacheHits[pkg] &&
+        pkg === "@ms/office-online-build-tools"
+      );
     });
 
     return taskIds;
@@ -36,5 +40,5 @@ export async function runTasks(context: RunContext) {
   markEnd("all");
   measure("all");
 
-  reportSummary(context);
+  await reportSummary(context);
 }
