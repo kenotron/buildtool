@@ -7,35 +7,38 @@ const hashes: { [key: string]: string } = {};
 const cacheHits: { [key: string]: boolean } = {};
 
 export async function computeHash(info: PackageInfo, context: RunContext) {
-  const cwd = path.dirname(info.packageJsonPath);
   const logger = backfill.makeLogger("warn", process.stdout, process.stderr);
-  const name = require(path.join(cwd, "package.json")).name;
+  const name = info.name;
 
   logger.setName(name);
 
-  // TODO: needs to account for file contents of important config files & cmd & workspace root
-  const hash = await backfill.computeHash(cwd, logger, context.command + "3");
+  const hash = await backfill.computeHash(
+    path.dirname(info.packageJsonPath),
+    logger,
+    context.command + "3"
+  );
 
-  hashes[cwd] = hash;
+  hashes[info.name] = hash;
 }
 
 export async function fetchBackfill(info: PackageInfo) {
-  const cwd = path.dirname(info.packageJsonPath);
   const logger = backfill.makeLogger("warn", process.stdout, process.stderr);
-  const hash = hashes[cwd];
+  const hash = hashes[info.name];
+  const cwd = path.dirname(info.packageJsonPath);
+
   const cacheHit = await backfill.fetch(cwd, hash, logger);
+
   cacheHits[info.name] = cacheHit;
 }
 
 export async function putBackfill(info: PackageInfo) {
-  const cwd = path.dirname(info.packageJsonPath);
-
   if (cacheHits[info.name]) {
     return;
   }
 
   const logger = backfill.makeLogger("warn", process.stdout, process.stderr);
-  const hash = hashes[cwd];
+  const hash = hashes[info.name];
+  const cwd = path.dirname(info.packageJsonPath);
 
   try {
     await backfill.put(cwd, hash, logger);

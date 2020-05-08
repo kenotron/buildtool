@@ -2,11 +2,11 @@ import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
 
 import {
-  ComputeHashTask,
   CacheFetchTask,
   CachePutTask,
+  ComputeHashTask,
 } from "../cache/cacheTasks";
-import { computeHash, fetchBackfill, putBackfill } from "../cache/backfill";
+import { fetchBackfill, putBackfill, computeHash } from "../cache/backfill";
 import { npmTask } from "./npmTask";
 import { taskWrapper } from "./taskWrapper";
 
@@ -30,6 +30,6 @@ export function generateTask(taskId: string, context: RunContext) {
       return taskWrapper(taskId, putBackfill, context);
 
     default:
-      return queue.add(npmTask(taskId, context));
+      return queue.add(() => npmTask(taskId, context));
   }
 }

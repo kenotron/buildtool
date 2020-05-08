@@ -4,6 +4,8 @@ import Profiler from "@lerna/profiler";
 import { PerformanceEntry } from "perf_hooks";
 import PQueue from "p-queue";
 
+interface TaskStats {}
+
 export interface RunContext {
   taskDepsGraph: TaskDepsGraph;
   tasks: Tasks;
@@ -16,4 +18,6 @@ export interface RunContext {
   profiler: Profiler;
   taskLogs: Map<TaskId, string[]>;
   queue: PQueue;
+  taskStats: Map<TaskId, TaskStats>;
+  cache: boolean;
 }

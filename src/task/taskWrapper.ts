@@ -3,24 +3,25 @@ import { PackageInfo } from "../types/PackageInfo";
 import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
 import { performance } from "perf_hooks";
-import { cacheHits } from "../cache/backfill";
+import { fetchBackfill, putBackfill, cacheHits } from "../cache/backfill";
+import { markStart, markEnd } from "../performance";
 
 export async function taskWrapper(
   taskId: TaskId,
   fn: (info: PackageInfo, context: RunContext) => void | Promise<void>,
   context: RunContext
 ) {
-  const { allPackages, profiler } = context;
+  const { allPackages, profiler, taskStats } = context;
 
   const [pkg, task] = getPackageTaskFromId(taskId);
 
-  performance.mark(`start:${taskId}`);
-  //console.log(`----- Running ${pkg}: ${task} -----`);
+  markStart(taskId);
 
-  if (!cacheHits[pkg]) {
+  if (!cacheHits[taskId]) {
     await profiler.run(() => fn(allPackages[pkg], context), taskId);
+    taskStats.set(pkg, {});
+    await putBackfill(allPackages[pkg]);
   }
 
-  //console.log(`----- Done ${pkg}: ${task} -----`);
-  performance.mark(`end:${taskId}`);
+  markEnd(taskId);
 }

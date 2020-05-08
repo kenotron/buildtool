@@ -10,7 +10,7 @@ const concurrency = os.cpus().length - 1;
 
 const context: RunContext = {
   allPackages: getPackageInfos(process.cwd()),
-  command: "build",
+  command: "ut",
   concurrency,
   defaultPipeline: {
     clean: [],
@@ -28,6 +28,8 @@ const context: RunContext = {
   }),
   taskLogs: new Map(),
   queue: new PQueue({ concurrency }),
+  taskStats: new Map(),
+  cache: true,
 };
 
 discoverTaskDeps(context);
