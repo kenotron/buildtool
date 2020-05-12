@@ -12,9 +12,8 @@ export interface RunContext {
   allPackages: PackageInfos;
   command: string;
   concurrency: number;
-  packageScopes: string[];
-  includeDependents: boolean;
-  includeDependencies: boolean;
+  scope: string[];
+  deps: boolean;
   defaultPipeline: { [task: string]: string[] };
   measures: PerformanceEntry[];
   profiler: Profiler;
@@ -22,4 +21,7 @@ export interface RunContext {
   queue: PQueue;
   taskStats: Map<TaskId, TaskStats>;
   cache: boolean;
+  failFast: boolean;
+  nodeArgs: string[];
+  args: any;
 }

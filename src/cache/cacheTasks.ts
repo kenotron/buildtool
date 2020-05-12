@@ -10,22 +10,7 @@ export const CacheFetchTask = "??fetch";
 export const CachePutTask = "??put";
 
 export function generateCacheTasks(context: RunContext) {
-  const { allPackages, tasks, taskDepsGraph, command } = context;
-
-  for (const pkg of Object.keys(allPackages)) {
-    const hashTaskId = getTaskId(pkg, ComputeHashTask);
-    tasks.set(hashTaskId, () => generateTask(hashTaskId, context));
-
-    const fetchTaskId = getTaskId(pkg, CacheFetchTask);
-    tasks.set(fetchTaskId, () => generateTask(fetchTaskId, context));
-
-    const putTaskId = getTaskId(pkg, CachePutTask);
-    tasks.set(putTaskId, () => generateTask(putTaskId, context));
-
-    const commandTaskId = getTaskId(pkg, command);
-    taskDepsGraph.push([hashTaskId, fetchTaskId]);
-    taskDepsGraph.push([commandTaskId, putTaskId]);
-  }
+  const { tasks, taskDepsGraph } = context;
 
   for (const taskId of tasks.keys()) {
     const [pkg, task] = getPackageTaskFromId(taskId);
@@ -33,12 +18,22 @@ export function generateCacheTasks(context: RunContext) {
     if (
       task !== CacheFetchTask &&
       task !== CachePutTask &&
-      task !== ComputeHashTask
+      task !== ComputeHashTask &&
+      pkg
     ) {
+      const hashTaskId = getTaskId(pkg, ComputeHashTask);
       const fetchTaskId = getTaskId(pkg, CacheFetchTask);
+      const putTaskId = getTaskId(pkg, CachePutTask);
 
       // set up the graph
+      taskDepsGraph.push([hashTaskId, fetchTaskId]);
+      tasks.set(hashTaskId, () => generateTask(hashTaskId, context));
+
       taskDepsGraph.push([fetchTaskId, taskId]);
+      tasks.set(fetchTaskId, () => generateTask(fetchTaskId, context));
+
+      taskDepsGraph.push([taskId, putTaskId]);
+      tasks.set(putTaskId, () => generateTask(putTaskId, context));
     }
   }
 }

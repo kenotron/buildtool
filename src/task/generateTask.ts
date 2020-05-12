@@ -10,6 +10,8 @@ import { fetchBackfill, putBackfill, computeHash } from "../cache/backfill";
 import { npmTask } from "./npmTask";
 import { taskWrapper } from "./taskWrapper";
 
+const EmptyTask = "";
+
 /**
  * Create task wraps the queueing, returns the promise for completion of the task ultimately
  * @param taskId
@@ -18,6 +20,10 @@ import { taskWrapper } from "./taskWrapper";
 export function generateTask(taskId: string, context: RunContext) {
   const { queue } = context;
   const [_, task] = getPackageTaskFromId(taskId);
+
+  if (taskId === EmptyTask) {
+    return Promise.resolve();
+  }
 
   switch (task) {
     case ComputeHashTask:

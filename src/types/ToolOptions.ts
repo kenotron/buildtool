@@ -1,3 +1,5 @@
 export interface ToolOptions {
-  defaultPipeline: { [task: string]: string[] };
+  pipeline: { [task: string]: string[] };
+  cache: boolean;
+  scopes: string[];
 }

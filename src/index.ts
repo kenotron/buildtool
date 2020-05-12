@@ -20,9 +20,10 @@ const configResults = cosmiconfigSync(ConfigModuleName).search(
 );
 
 const concurrency = os.cpus().length - 1;
+const command = parsedArgs._[0];
 const context: RunContext = {
   allPackages: getPackageInfos(root),
-  command: parsedArgs._[0],
+  command,
   concurrency,
   defaultPipeline: configResults?.config.pipeline || {
     build: ["^build"],
@@ -30,9 +31,8 @@ const context: RunContext = {
   },
   taskDepsGraph: [],
   tasks: new Map(),
-  includeDependencies: true,
-  includeDependents: true,
-  packageScopes: configResults?.config.options || [],
+  deps: parsedArgs.deps || configResults?.config.deps || false,
+  scope: parsedArgs.scope || configResults?.config.scope || [],
   measures: [],
   profiler: new Profiler({
     concurrency,
@@ -42,10 +42,58 @@ const context: RunContext = {
   queue: new PQueue({ concurrency }),
   taskStats: new Map(),
   cache: false,
+  failFast: true,
+  nodeArgs: parsedArgs.nodeArgs ? arrifyArgs(parsedArgs.nodeArgs) : [],
+  args: getPassThroughArgs(parsedArgs),
 };
 
 discoverTaskDeps(context);
 
-console.log(context);
-
 runTasks(context);
+
+function arrifyArgs(args: { [key: string]: string | string[] }) {
+  const argsArray: string[] = [];
+  for (const [key, val] of Object.entries(args)) {
+    if (Array.isArray(val)) {
+      for (const item of val) {
+        pushValue(key, item);
+      }
+    } else {
+      pushValue(key, val);
+    }
+  }
+
+  return argsArray;
+
+  function pushValue(key: string, value: string) {
+    let keyArg = "";
+
+    if (key.length > 1) {
+      keyArg = `-${key}`;
+    } else {
+      keyArg = `--${key}`;
+    }
+
+    if (typeof value === "boolean") {
+      argsArray.push(key);
+    } else {
+      argsArray.push(key, value);
+    }
+  }
+}
+
+function getPassThroughArgs(args: { [key: string]: string | string[] }) {
+  let result: string[] = [];
+  result = result.concat(args._.slice(1));
+
+  let {
+    nodeArgs: _nodeArgValues,
+    scope: _scopeArg,
+    deps: _depsArg,
+    _: _positionals,
+    ...filtered
+  } = args;
+  result = result.concat(arrifyArgs(filtered));
+
+  return result;
+}

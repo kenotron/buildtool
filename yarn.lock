@@ -3074,10 +3074,10 @@ wordwrap@~1.0.0:
   resolved "https://registry.yarnpkg.com/wordwrap/-/wordwrap-1.0.0.tgz#27584810891456a4171c8d0226441ade90cbcaeb"
   integrity sha1-J1hIEIkUVqQXHI0CJkQa3pDLyus=
 
-workspace-tools@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/workspace-tools/-/workspace-tools-0.3.0.tgz#f7947a3f6eafc39b6b9d9db9e5878d2a52f82fef"
-  integrity sha512-MgWtKnzI4oB/ld/f71fD5dtbxhG4dpI94yCEEqlttmoqUDe8RbcvZOl6wxApVkSWJvw5Fw6E/qUVAO4JC3aJkg==
+workspace-tools@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/workspace-tools/-/workspace-tools-0.3.1.tgz#820f02a960ecb616836cb7e1a25789016836dd93"
+  integrity sha512-au50M1QY6b5+4pGqRsWT8g2+xT0P2AWECXwbDFm/X7MmYj8J1JR+dOr5q//oB2vBhr/Xt4rPznN7scsFwJDy/w==
   dependencies:
     git-url-parse "^11.1.2"
     jju "^1.4.0"

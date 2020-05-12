@@ -18,18 +18,16 @@ export async function runTasks(context: RunContext) {
   initializePerformance(context);
   markStart("all");
 
-  console.log(`Executing command "${context.command}"`);
+  console.log(`Executing command "${command}"`);
 
   generateCacheTasks(context);
 
-  await pGraph(context.tasks, context.taskDepsGraph).run((graph) => {
-    const taskIds = [...graph.keys()].filter((k) => {
-      const [pkg, task] = getPackageTaskFromId(k);
-      return (task === command || task === CachePutTask) && !cacheHits[pkg];
-    });
+  // console.dir({
+  //   tasks: context.tasks,
+  //   taskDepsGraph: context.taskDepsGraph,
+  // });
 
-    return taskIds;
-  });
+  await pGraph(context.tasks, context.taskDepsGraph).run();
 
   profiler.output();
 

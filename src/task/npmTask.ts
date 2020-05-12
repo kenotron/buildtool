@@ -27,10 +27,39 @@ export function npmTask(taskId: TaskId, context: RunContext) {
           return resolve();
         }
 
-        const cp = spawn("npm.cmd", ["run", task], {
-          cwd: path.dirname(allPackages[pkg].packageJsonPath),
-          stdio: "pipe",
-        });
+        console.log(
+          `Running ${[
+            process.execPath,
+            ...context.nodeArgs,
+            path.join(
+              path.dirname(process.execPath),
+              "node_modules/npm/bin/npm-cli.js"
+            ),
+            "run",
+            task,
+            "--",
+            ...context.args,
+          ].join(" ")}`
+        );
+
+        const cp = spawn(
+          process.execPath,
+          [
+            ...context.nodeArgs,
+            path.join(
+              path.dirname(process.execPath),
+              "node_modules/npm/bin/npm-cli.js"
+            ),
+            "run",
+            task,
+            "--",
+            ...context.args,
+          ],
+          {
+            cwd: path.dirname(allPackages[pkg].packageJsonPath),
+            stdio: "pipe",
+          }
+        );
 
         cp.stdout.on("data", (data) => {
           data
