@@ -68,16 +68,16 @@ function arrifyArgs(args: { [key: string]: string | string[] }) {
   function pushValue(key: string, value: string) {
     let keyArg = "";
 
-    if (key.length > 1) {
+    if (key.length === 1) {
       keyArg = `-${key}`;
     } else {
       keyArg = `--${key}`;
     }
 
     if (typeof value === "boolean") {
-      argsArray.push(key);
+      argsArray.push(keyArg);
     } else {
-      argsArray.push(key, value);
+      argsArray.push(keyArg, value);
     }
   }
 }

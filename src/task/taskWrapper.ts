@@ -10,7 +10,7 @@ export async function taskWrapper(
   fn: (info: PackageInfo, context: RunContext) => void | Promise<void>,
   context: RunContext
 ) {
-  const { allPackages, profiler, taskStats } = context;
+  const { allPackages, profiler, taskStats, queue } = context;
 
   const [pkg, _] = getPackageTaskFromId(taskId);
 

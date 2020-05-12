@@ -18,7 +18,6 @@ const EmptyTask = "";
  * @param context
  */
 export function generateTask(taskId: string, context: RunContext) {
-  const { queue } = context;
   const [_, task] = getPackageTaskFromId(taskId);
 
   if (taskId === EmptyTask) {
@@ -36,6 +35,6 @@ export function generateTask(taskId: string, context: RunContext) {
       return taskWrapper(taskId, putBackfill, context);
 
     default:
-      return queue.add(() => npmTask(taskId, context));
+      return npmTask(taskId, context);
   }
 }

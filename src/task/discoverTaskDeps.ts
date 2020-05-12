@@ -54,10 +54,45 @@ function getPipeline(pkg: string, context: RunContext) {
 }
 
 /**
+ * Gather all the task dependencies defined by the "pipeline" setting, generates a list of edges
+ * @param targetTask
+ * @param pipeline
+ */
+function generateTaskDepsGraph(
+  targetTask: string,
+  pipeline: { [key: string]: string[] }
+) {
+  const queue = [targetTask];
+  const visited = new Set<string>();
+  const graph: [string, string][] = [];
+  while (queue.length > 0) {
+    const task = queue.shift()!;
+    if (!visited.has(task)) {
+      visited.add(task);
+
+      if (Array.isArray(pipeline[task])) {
+        if (pipeline[task].length > 0) {
+          for (const depTask of pipeline[task]) {
+            graph.push([depTask, task]);
+            queue.push(depTask);
+          }
+        } else {
+          graph.push(["", task]);
+        }
+      }
+    }
+  }
+
+  return graph;
+}
+
+/**
  * identify and create a realized task dependency map (discovering)
+ *
+ * This function will traverse the package dependency graph, and will end up traverse the task depenendencies within the same package (2 layered traversal)
  */
 export function discoverTaskDeps(context: RunContext) {
-  const { allPackages } = context;
+  const { allPackages, command } = context;
 
   const filteredPackages = filterPackages(context);
   console.log(`Packages in scope: ${filteredPackages.join(",")}`);
@@ -77,34 +112,25 @@ export function discoverTaskDeps(context: RunContext) {
       const pipeline = getPipeline(pkg, context);
 
       // establish task graph; push dependents in the traversal queue
-      for (const [task, taskDeps] of Object.entries(pipeline)) {
-        const taskId = getTaskId(pkg, task);
+      const depTaskGraph = generateTaskDepsGraph(command, pipeline);
 
-        if (isValidTaskId(taskId, allPackages)) {
-          if (taskDeps.length > 0) {
-            for (const taskDep of taskDeps) {
-              // add task dep from all the package deps within repo
-              const dependentPkgs = dependentMap.get(pkg);
+      for (const [from, to] of depTaskGraph) {
+        const dependentPkgs = dependentMap.get(pkg);
+        const toTaskId = getTaskId(pkg, to);
 
-              if (taskDep.startsWith("^") && dependentPkgs !== undefined) {
-                // add task dep from all the package deps within repo
-                const dependentPkgs = dependentMap.get(pkg);
-                const taskName = taskDep.slice(1);
-
-                for (const depPkg of dependentPkgs!) {
-                  createDep(taskId, getTaskId(depPkg, taskName), context);
-                }
-
-                // now push the dependents in the traversal queue
-                traversalQueue.push(pkg);
-              } else {
-                // add task dep from same package
-                createDep(taskId, getTaskId(pkg, taskDep), context);
-              }
-            }
-          } else {
-            createDep(taskId, "", context);
+        if (from.startsWith("^") && dependentPkgs !== undefined) {
+          // add task dep from all the package deps within repo
+          for (const depPkg of dependentPkgs!) {
+            const fromTaskId = getTaskId(depPkg, from.slice(1));
+            createDep(fromTaskId, toTaskId, context);
           }
+
+          // now push the dependents in the traversal queue
+          traversalQueue.push(pkg);
+        } else {
+          const fromTaskId = getTaskId(pkg, from);
+          // add task dep from same package
+          createDep(fromTaskId, toTaskId, context);
         }
       }
     }
@@ -120,19 +146,19 @@ function isValidTaskId(taskId: string, allPackages: PackageInfos) {
   );
 }
 
-function createDep(taskId: TaskId, depTaskId: TaskId, context: RunContext) {
+function createDep(fromTaskId: TaskId, toTaskId: TaskId, context: RunContext) {
   const { tasks, taskDepsGraph, allPackages } = context;
 
-  if (!isValidTaskId(depTaskId, allPackages)) {
+  if (!isValidTaskId(fromTaskId, allPackages)) {
     return;
   }
 
-  taskDepsGraph.push([depTaskId, taskId]);
-  if (!tasks.get(depTaskId)) {
-    tasks.set(depTaskId, () => generateTask(depTaskId, context));
+  taskDepsGraph.push([fromTaskId, toTaskId]);
+  if (!tasks.get(fromTaskId)) {
+    tasks.set(fromTaskId, () => generateTask(fromTaskId, context));
   }
 
-  if (!tasks.get(taskId)) {
-    tasks.set(taskId, () => generateTask(taskId, context));
+  if (!tasks.get(toTaskId)) {
+    tasks.set(toTaskId, () => generateTask(toTaskId, context));
   }
 }
