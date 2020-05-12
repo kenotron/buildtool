@@ -1,4 +1,9 @@
-import { getInternalDeps } from "workspace-tools";
+import {
+  getInternalDeps,
+  getScopedPackages,
+  getTransitiveDependencies,
+  getTransitiveDependents,
+} from "workspace-tools";
 import { getTaskId, getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
 import { TaskId } from "../types/Task";
@@ -20,7 +25,30 @@ const ConfigModuleName = "lage";
 export function discoverTaskDeps(context: RunContext) {
   const { allPackages, defaultPipeline, taskDepsGraph, tasks } = context;
 
-  for (const [pkg, info] of Object.entries(allPackages)) {
+  let scopedPackages = getScopedPackages(
+    context.packageScopes || ["*"],
+    context.allPackages
+  );
+
+  if (context.includeDependencies) {
+    scopedPackages = scopedPackages.concat(
+      getTransitiveDependencies(scopedPackages, context.allPackages)
+    );
+  }
+
+  if (context.includeDependents) {
+    scopedPackages = scopedPackages.concat(
+      getTransitiveDependents(scopedPackages, context.allPackages)
+    );
+  }
+
+  const filteredPackages = new Map(
+    Object.keys(allPackages)
+      .filter((pkg) => scopedPackages.includes(pkg))
+      .map((pkg) => [pkg, allPackages[pkg]])
+  );
+
+  for (const [pkg, info] of filteredPackages.entries()) {
     const results = cosmiconfigSync(ConfigModuleName).search(
       path.dirname(info.packageJsonPath)
     );

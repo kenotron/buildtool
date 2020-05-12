@@ -25,11 +25,7 @@ export async function runTasks(context: RunContext) {
   await pGraph(context.tasks, context.taskDepsGraph).run((graph) => {
     const taskIds = [...graph.keys()].filter((k) => {
       const [pkg, task] = getPackageTaskFromId(k);
-      return (
-        (task === command || task === CachePutTask) &&
-        !cacheHits[pkg] &&
-        pkg === "@ms/office-online-build-tools"
-      );
+      return (task === command || task === CachePutTask) && !cacheHits[pkg];
     });
 
     return taskIds;

@@ -8,7 +8,7 @@ import PQueue from "p-queue/dist";
 import { cosmiconfigSync } from "cosmiconfig";
 import yargsParser from "yargs-parser";
 
-const parsedArgs = yargsParser(process.argv);
+const parsedArgs = yargsParser(process.argv.slice(2));
 
 const root = findGitRoot(process.cwd());
 if (!root) {
@@ -30,7 +30,9 @@ const context: RunContext = {
   },
   taskDepsGraph: [],
   tasks: new Map(),
-  packageScope: [],
+  includeDependencies: true,
+  includeDependents: true,
+  packageScopes: configResults?.config.options || [],
   measures: [],
   profiler: new Profiler({
     concurrency,
@@ -43,4 +45,7 @@ const context: RunContext = {
 };
 
 discoverTaskDeps(context);
+
+console.log(context);
+
 runTasks(context);

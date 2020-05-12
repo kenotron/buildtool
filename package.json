@@ -24,7 +24,7 @@
     "p-queue": "^6.4.0",
     "read-yaml": "^1.1.0",
     "yargs-parser": "^18.1.3",
-    "workspace-tools": "^0.2.1"
+    "workspace-tools": "^0.3.0"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.0",

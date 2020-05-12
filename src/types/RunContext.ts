@@ -12,7 +12,9 @@ export interface RunContext {
   allPackages: PackageInfos;
   command: string;
   concurrency: number;
-  packageScope: string[];
+  packageScopes: string[];
+  includeDependents: boolean;
+  includeDependencies: boolean;
   defaultPipeline: { [task: string]: string[] };
   measures: PerformanceEntry[];
   profiler: Profiler;
