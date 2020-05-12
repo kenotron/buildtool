@@ -1,9 +1,8 @@
 import { TaskId } from "../types/Task";
-import { PackageInfo } from "../types/PackageInfo";
+import { PackageInfo } from "workspace-tools";
 import { getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
-import { performance } from "perf_hooks";
-import { fetchBackfill, putBackfill, cacheHits } from "../cache/backfill";
+import { cacheHits } from "../cache/backfill";
 import { markStart, markEnd } from "../performance";
 
 export async function taskWrapper(
