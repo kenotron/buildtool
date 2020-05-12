@@ -1,5 +1,5 @@
 import { TaskDepsGraph, Tasks, TaskId } from "./Task";
-import { PackageInfos } from "./PackageInfo";
+import { PackageInfos } from "workspace-tools";
 import Profiler from "@lerna/profiler";
 import { PerformanceEntry } from "perf_hooks";
 import PQueue from "p-queue";

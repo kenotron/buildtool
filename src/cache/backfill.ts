@@ -1,5 +1,5 @@
 import * as backfill from "backfill/lib/api";
-import { PackageInfo } from "../types/PackageInfo";
+import { PackageInfo } from "workspace-tools";
 import path from "path";
 import { RunContext } from "../types/RunContext";
 
@@ -15,7 +15,7 @@ export async function computeHash(info: PackageInfo, context: RunContext) {
   const hash = await backfill.computeHash(
     path.dirname(info.packageJsonPath),
     logger,
-    context.command + "3"
+    context.command + "4"
   );
 
   hashes[info.name] = hash;
@@ -32,10 +32,6 @@ export async function fetchBackfill(info: PackageInfo) {
 }
 
 export async function putBackfill(info: PackageInfo) {
-  if (cacheHits[info.name]) {
-    return;
-  }
-
   const logger = backfill.makeLogger("warn", process.stdout, process.stderr);
   const hash = hashes[info.name];
   const cwd = path.dirname(info.packageJsonPath);

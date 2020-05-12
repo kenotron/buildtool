@@ -1,17 +1,18 @@
-import {
-  getInternalDepsWithTask,
-  getInternalDeps,
-} from "../monorepo/internalDeps";
+import { getInternalDeps } from "workspace-tools";
 import { getTaskId, getPackageTaskFromId } from "./taskId";
 import { RunContext } from "../types/RunContext";
 import { TaskId } from "../types/Task";
 import { generateTask } from "./generateTask";
-import { PackageInfos } from "../types/PackageInfo";
+import { PackageInfos } from "workspace-tools";
+import path from "path";
 import {
   ComputeHashTask,
   CachePutTask,
   CacheFetchTask,
 } from "../cache/cacheTasks";
+import { cosmiconfigSync } from "cosmiconfig";
+
+const ConfigModuleName = "lage";
 
 /**
  * identify and create a realized task dependency map (discovering)
@@ -20,7 +21,15 @@ export function discoverTaskDeps(context: RunContext) {
   const { allPackages, defaultPipeline, taskDepsGraph, tasks } = context;
 
   for (const [pkg, info] of Object.entries(allPackages)) {
-    const pipeline = info.pipeline || defaultPipeline;
+    const results = cosmiconfigSync(ConfigModuleName).search(
+      path.dirname(info.packageJsonPath)
+    );
+
+    let pipeline = defaultPipeline;
+
+    if (results && results.config) {
+      pipeline = results.config.pipeline;
+    }
 
     for (const [task, taskDeps] of Object.entries(pipeline)) {
       const taskId = getTaskId(pkg, task);

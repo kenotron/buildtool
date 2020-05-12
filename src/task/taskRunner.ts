@@ -3,7 +3,7 @@ import { getPackageTaskFromId, getTaskId } from "./taskId";
 
 import { cacheHits } from "../cache/backfill";
 import pGraph from "p-graph";
-import { generateCacheTasks } from "../cache/cacheTasks";
+import { generateCacheTasks, CachePutTask } from "../cache/cacheTasks";
 import {
   initializePerformance,
   markStart,
@@ -26,7 +26,7 @@ export async function runTasks(context: RunContext) {
     const taskIds = [...graph.keys()].filter((k) => {
       const [pkg, task] = getPackageTaskFromId(k);
       return (
-        task === command &&
+        (task === command || task === CachePutTask) &&
         !cacheHits[pkg] &&
         pkg === "@ms/office-online-build-tools"
       );

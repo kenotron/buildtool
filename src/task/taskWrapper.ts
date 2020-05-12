@@ -13,14 +13,13 @@ export async function taskWrapper(
 ) {
   const { allPackages, profiler, taskStats } = context;
 
-  const [pkg, task] = getPackageTaskFromId(taskId);
+  const [pkg, _] = getPackageTaskFromId(taskId);
 
   markStart(taskId);
 
   if (!cacheHits[taskId]) {
     await profiler.run(() => fn(allPackages[pkg], context), taskId);
     taskStats.set(pkg, {});
-    await putBackfill(allPackages[pkg]);
   }
 
   markEnd(taskId);

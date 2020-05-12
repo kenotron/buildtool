@@ -1,22 +1,32 @@
-import { getPackageInfos } from "./monorepo/getPackageInfos";
+import { getPackageInfos, findGitRoot } from "workspace-tools";
 import { RunContext } from "./types/RunContext";
 import { discoverTaskDeps } from "./task/discoverTaskDeps";
 import { runTasks } from "./task/taskRunner";
 import Profiler from "@lerna/profiler";
 import os from "os";
 import PQueue from "p-queue/dist";
+import { cosmiconfigSync } from "cosmiconfig";
+import yargsParser from "yargs-parser";
+
+const parsedArgs = yargsParser(process.argv);
+
+const root = findGitRoot(process.cwd());
+if (!root) {
+  throw new Error("This must be called inside a git-controlled repo");
+}
+const ConfigModuleName = "lage";
+const configResults = cosmiconfigSync(ConfigModuleName).search(
+  root || process.cwd()
+);
 
 const concurrency = os.cpus().length - 1;
-
 const context: RunContext = {
-  allPackages: getPackageInfos(process.cwd()),
-  command: "ut",
+  allPackages: getPackageInfos(root),
+  command: parsedArgs._[0],
   concurrency,
-  defaultPipeline: {
-    clean: [],
-    rebuild: ["clean", "build"],
+  defaultPipeline: configResults?.config.pipeline || {
     build: ["^build"],
-    ut: ["build"],
+    clean: [],
   },
   taskDepsGraph: [],
   tasks: new Map(),
@@ -29,9 +39,8 @@ const context: RunContext = {
   taskLogs: new Map(),
   queue: new PQueue({ concurrency }),
   taskStats: new Map(),
-  cache: true,
+  cache: false,
 };
 
 discoverTaskDeps(context);
-
 runTasks(context);

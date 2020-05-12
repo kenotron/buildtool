@@ -10,7 +10,7 @@ export const CacheFetchTask = "??fetch";
 export const CachePutTask = "??put";
 
 export function generateCacheTasks(context: RunContext) {
-  const { allPackages, tasks, taskDepsGraph } = context;
+  const { allPackages, tasks, taskDepsGraph, command } = context;
 
   for (const pkg of Object.keys(allPackages)) {
     const hashTaskId = getTaskId(pkg, ComputeHashTask);
@@ -20,9 +20,11 @@ export function generateCacheTasks(context: RunContext) {
     tasks.set(fetchTaskId, () => generateTask(fetchTaskId, context));
 
     const putTaskId = getTaskId(pkg, CachePutTask);
-    tasks.set(putTaskId, () => generateTask(hashTaskId, context));
+    tasks.set(putTaskId, () => generateTask(putTaskId, context));
 
+    const commandTaskId = getTaskId(pkg, command);
     taskDepsGraph.push([hashTaskId, fetchTaskId]);
+    taskDepsGraph.push([commandTaskId, putTaskId]);
   }
 
   for (const taskId of tasks.keys()) {
@@ -34,11 +36,9 @@ export function generateCacheTasks(context: RunContext) {
       task !== ComputeHashTask
     ) {
       const fetchTaskId = getTaskId(pkg, CacheFetchTask);
-      const putTaskId = getTaskId(pkg, CachePutTask);
 
       // set up the graph
       taskDepsGraph.push([fetchTaskId, taskId]);
-      taskDepsGraph.push([taskId, putTaskId]);
     }
   }
 }
