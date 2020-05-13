@@ -1,8 +1,16 @@
 # Change Log - lage
 
-This log was last generated on Wed, 13 May 2020 22:42:02 GMT and should not be manually modified.
+This log was last generated on Wed, 13 May 2020 23:30:10 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 0.4.6
+
+Wed, 13 May 2020 23:30:10 GMT
+
+### Patches
+
+- fixing up npm cmd call so it's platform independent (kchau@microsoft.com)
 
 ## 0.4.5
 
