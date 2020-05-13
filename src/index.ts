@@ -10,6 +10,7 @@ import yargsParser from "yargs-parser";
 import { EventEmitter } from "events";
 import log from "npmlog";
 import { initialize } from "./logger";
+import { exists } from "fs";
 
 const parsedArgs = yargsParser(process.argv.slice(2));
 
@@ -63,6 +64,8 @@ if (context.verbose) {
 console.log(`🧱 Lage task runner 🧱`);
 console.log(``);
 
+validateInput(context);
+
 discoverTaskDeps(context);
 
 runTasks(context);
@@ -115,4 +118,11 @@ function getPassThroughArgs(args: { [key: string]: string | string[] }) {
   result = result.concat(arrifyArgs(filtered));
 
   return result;
+}
+
+function validateInput(context: RunContext) {
+  if (parsedArgs._.length < 1) {
+    console.log("Usage: lage [command]");
+    process.exit(0);
+  }
 }
