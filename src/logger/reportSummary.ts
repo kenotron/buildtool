@@ -3,9 +3,10 @@ import { getPackageTaskFromId } from "../task/taskId";
 import log from "npmlog";
 import chalk from "chalk";
 import { formatDuration } from "./formatDuration";
+import { info } from "./index";
 
 function hr() {
-  console.log("----------------------------------------------");
+  log.info("", "----------------------------------------------");
 }
 
 export async function reportSummary(context: RunContext) {
@@ -19,6 +20,8 @@ export async function reportSummary(context: RunContext) {
 
   hr();
 
+  log.info("", chalk.cyanBright(`🏗 Summary\n`));
+
   if (measures.failedTask) {
     const [pkg, task] = getPackageTaskFromId(measures.failedTask);
     log.error("", `ERROR DETECTED IN ${pkg} ${task}`);
@@ -30,7 +33,7 @@ export async function reportSummary(context: RunContext) {
   if (measures.taskStats.length > 0) {
     for (const stats of measures.taskStats) {
       const colorFn = statusColorFn[stats.status];
-      log.info(
+      info(
         stats.taskId,
         colorFn(`${stats.status}, took ${formatDuration(stats.duration)}`)
       );

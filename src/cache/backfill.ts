@@ -15,7 +15,7 @@ export async function computeHash(info: PackageInfo, context: RunContext) {
   const hash = await backfill.computeHash(
     path.dirname(info.packageJsonPath),
     logger,
-    context.command + process.argv.join(" ")
+    context.command + context.args.join(" ")
   );
 
   hashes[info.name] = hash;

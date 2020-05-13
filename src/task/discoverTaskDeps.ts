@@ -142,6 +142,7 @@ function isValidTaskId(taskId: string, allPackages: PackageInfos) {
   const [pkg, task] = getPackageTaskFromId(taskId);
   return (
     taskId === "" ||
+    task === "" ||
     [ComputeHashTask, CachePutTask, CacheFetchTask].includes(task) ||
     Object.keys(allPackages[pkg].scripts || {}).includes(task)
   );
@@ -150,7 +151,10 @@ function isValidTaskId(taskId: string, allPackages: PackageInfos) {
 function createDep(fromTaskId: TaskId, toTaskId: TaskId, context: RunContext) {
   const { tasks, taskDepsGraph, allPackages } = context;
 
-  if (!isValidTaskId(fromTaskId, allPackages)) {
+  if (
+    !isValidTaskId(fromTaskId, allPackages) ||
+    !isValidTaskId(toTaskId, allPackages)
+  ) {
     return;
   }
 

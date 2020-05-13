@@ -20,7 +20,8 @@ const EmptyTask = "";
 export function generateTask(taskId: string, context: RunContext) {
   const [_, task] = getPackageTaskFromId(taskId);
 
-  if (taskId === EmptyTask) {
+  // Special case, we use this as a dummy to give tasks with no dependencies to be attached in the graph
+  if (task === EmptyTask) {
     return Promise.resolve();
   }
 
