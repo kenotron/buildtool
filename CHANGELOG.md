@@ -1,8 +1,16 @@
 # Change Log - lage
 
-This log was last generated on Wed, 13 May 2020 16:37:33 GMT and should not be manually modified.
+This log was last generated on Wed, 13 May 2020 18:47:23 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 0.4.4
+
+Wed, 13 May 2020 18:47:23 GMT
+
+### Patches
+
+- allow tasks with no deps to run as well (kchau@microsoft.com)
 
 ## 0.4.3
 
