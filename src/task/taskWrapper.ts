@@ -5,6 +5,7 @@ import { RunContext } from "../types/RunContext";
 import { cacheHits } from "../cache/backfill";
 import { info } from "../logger";
 import { isCacheTask } from "../cache/cacheTasks";
+import { formatDuration } from "../logger/formatDuration";
 
 export async function taskWrapper(
   taskId: TaskId,
@@ -33,10 +34,7 @@ export async function taskWrapper(
         duration,
       });
 
-      info(
-        taskId,
-        `ended - took ${(duration[0] + duration[1] / 1e9).toFixed(2)}s`
-      );
+      info(taskId, `ended - took ${formatDuration(duration)}`);
     }
   } else if (!isCacheTask(task)) {
     info(taskId, "skipped");

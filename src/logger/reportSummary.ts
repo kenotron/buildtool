@@ -1,10 +1,7 @@
 import { RunContext } from "../types/RunContext";
 import { getPackageTaskFromId } from "../task/taskId";
 import log from "npmlog";
-
-function hrtimeToSec(hrtime: [number, number]) {
-  return (hrtime[0] + hrtime[1] / 1e9).toFixed(2);
-}
+import { formatDuration } from "./formatDuration";
 
 function hr() {
   console.log("----------------------------------------------");
@@ -28,7 +25,7 @@ export async function reportSummary(context: RunContext) {
     measures.taskStats
       .map((stats) => {
         const [pkg, task] = getPackageTaskFromId(stats.taskId);
-        return `[${pkg} - ${task}] took ${hrtimeToSec(stats.duration)}s`;
+        return `[${pkg} - ${task}] took ${formatDuration(stats.duration)}s`;
       })
       .join("\n")
   );
@@ -37,7 +34,7 @@ export async function reportSummary(context: RunContext) {
 
   log.info(
     "",
-    `The command "${command}" took a total of ${hrtimeToSec(
+    `The command "${command}" took a total of ${formatDuration(
       measures.duration
     )}s to complete`
   );

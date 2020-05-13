@@ -10,8 +10,6 @@ import yargsParser from "yargs-parser";
 import { EventEmitter } from "events";
 import log from "npmlog";
 import { initialize } from "./logger";
-import { exists } from "fs";
-
 const parsedArgs = yargsParser(process.argv.slice(2));
 
 const root = findGitRoot(process.cwd());
