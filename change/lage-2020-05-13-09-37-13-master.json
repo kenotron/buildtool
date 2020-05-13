@@ -1,8 +1,0 @@
-{
-  "type": "patch",
-  "comment": "truly respects the profile flag",
-  "packageName": "lage",
-  "email": "kchau@microsoft.com",
-  "dependentChangeType": "patch",
-  "date": "2020-05-13T16:37:13.596Z"
-}

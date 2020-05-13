@@ -1,7 +1,7 @@
 {
   "name": "lage",
   "description": "A monorepo task runner",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
