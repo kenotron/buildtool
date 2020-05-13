@@ -9,6 +9,7 @@ import { cosmiconfigSync } from "cosmiconfig";
 import yargsParser from "yargs-parser";
 import { EventEmitter } from "events";
 import log from "npmlog";
+import { initialize } from "./logger";
 
 const parsedArgs = yargsParser(process.argv.slice(2));
 
@@ -54,9 +55,13 @@ const context: RunContext = {
   verbose: parsedArgs.verbose ? true : false,
 };
 
+initialize(context);
 if (context.verbose) {
   log.level = "verbose";
 }
+
+console.log(`🧱 Lage task runner 🧱`);
+console.log(``);
 
 discoverTaskDeps(context);
 

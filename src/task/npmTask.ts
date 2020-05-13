@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 import path from "path";
 
 import { RunContext } from "../types/RunContext";
-import { createLogger } from "../logger";
+import logger from "../logger";
 import { taskWrapper } from "./taskWrapper";
 import { abort } from "./abortSignal";
 
@@ -12,7 +12,6 @@ export function npmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
   const { allPackages, queue } = context;
 
-  const logger = createLogger(taskId);
   const prefix = `${pkg} ${task}`;
 
   return queue.add(() =>
@@ -21,12 +20,12 @@ export function npmTask(taskId: TaskId, context: RunContext) {
       () =>
         new Promise((resolve, reject) => {
           if (!allPackages[pkg].scripts[task]) {
-            logger.info(prefix, `Empty script detected: ${pkg} - ${task}`);
+            logger.info(taskId, `Empty script detected: ${pkg} - ${task}`);
             return resolve();
           }
 
           logger.verbose(
-            prefix,
+            taskId,
             `Running ${[
               process.execPath,
               ...context.nodeArgs,
@@ -61,8 +60,6 @@ export function npmTask(taskId: TaskId, context: RunContext) {
 
           context.events.once("abort", () => {
             queue.pause();
-
-            context.measures.failedTask = taskId;
             // kill the process in progress, but be gentle and let the process themselves take care of SIGTERM
             cp.kill("SIGTERM");
           });
@@ -73,7 +70,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
                 .toString()
                 .split(/\n/)
                 .forEach((line) => {
-                  logger.verbose(prefix, line);
+                  logger.verbose(taskId, line);
                 });
             }
           });
@@ -84,7 +81,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
                 .toString()
                 .split(/\n/)
                 .forEach((line) => {
-                  logger.verbose(prefix, line);
+                  logger.verbose(taskId, line);
                 });
             }
           });
@@ -94,6 +91,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
               return resolve();
             }
 
+            context.measures.failedTask = taskId;
             abort(context);
             reject();
           });

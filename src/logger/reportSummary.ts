@@ -1,5 +1,6 @@
 import { RunContext } from "../types/RunContext";
 import { getPackageTaskFromId } from "../task/taskId";
+import log from "npmlog";
 
 function hrtimeToSec(hrtime: [number, number]) {
   return (hrtime[0] + hrtime[1] / 1e9).toFixed(2);
@@ -10,17 +11,20 @@ function hr() {
 }
 
 export async function reportSummary(context: RunContext) {
-  const { command, measures } = context;
+  const { command, measures, taskLogs } = context;
 
   hr();
 
   if (measures.failedTask) {
     const [pkg, task] = getPackageTaskFromId(measures.failedTask);
-    console.error(`ERROR DETECTED IN ${pkg} ${task}`);
+    log.error("", `ERROR DETECTED IN ${pkg} ${task}`);
+    log.error("", taskLogs.get(measures.failedTask)!.join("\n"));
+
     hr();
   }
 
-  console.log(
+  log.info(
+    "",
     measures.taskStats
       .map((stats) => {
         const [pkg, task] = getPackageTaskFromId(stats.taskId);
@@ -31,7 +35,8 @@ export async function reportSummary(context: RunContext) {
 
   hr();
 
-  console.log(
+  log.info(
+    "",
     `The command "${command}" took a total of ${hrtimeToSec(
       measures.duration
     )}s to complete`

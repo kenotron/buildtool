@@ -15,11 +15,9 @@ export async function taskWrapper(
 
   const [pkg, task] = getPackageTaskFromId(taskId);
 
-  const prefix = `${pkg} ${task}`;
-
   if (!cacheHits[pkg]) {
     if (!isCacheTask(task)) {
-      info(prefix, "started");
+      info(taskId, "started");
     }
 
     const start = process.hrtime();
@@ -36,11 +34,11 @@ export async function taskWrapper(
       });
 
       info(
-        prefix,
+        taskId,
         `ended - took ${(duration[0] + duration[1] / 1e9).toFixed(2)}s`
       );
     }
   } else if (!isCacheTask(task)) {
-    info(prefix, "skipped");
+    info(taskId, "skipped");
   }
 }

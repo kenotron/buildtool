@@ -97,7 +97,6 @@ export function discoverTaskDeps(context: RunContext) {
   const { allPackages, command } = context;
 
   const filteredPackages = filterPackages(context);
-  console.log(`Packages in scope: ${filteredPackages.join(",")}`);
 
   // initialize a queue for a breadth first approach
   const traversalQueue = filteredPackages;

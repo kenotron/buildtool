@@ -1,10 +1,7 @@
 import { RunContext } from "../types/RunContext";
-import { getPackageTaskFromId, getTaskId } from "./taskId";
-
-import { cacheHits } from "../cache/backfill";
 import pGraph from "p-graph";
-import { generateCacheTasks, CachePutTask } from "../cache/cacheTasks";
-import { reportSummary } from "../performance";
+import { generateCacheTasks } from "../cache/cacheTasks";
+import { reportSummary } from "../logger/reportSummary";
 
 export async function runTasks(context: RunContext) {
   const { command, profiler } = context;
