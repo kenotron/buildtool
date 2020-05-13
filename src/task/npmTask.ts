@@ -7,12 +7,18 @@ import { RunContext } from "../types/RunContext";
 import logger from "../logger";
 import { taskWrapper } from "./taskWrapper";
 import { abort } from "./abortSignal";
+import os from "os";
 
 export function npmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
   const { allPackages, queue } = context;
 
-  const prefix = `${pkg} ${task}`;
+  const npmCmd = path.join(
+    path.dirname(process.execPath),
+    os.platform() === "win32" ? "npm.cmd" : "npm"
+  );
+
+  const npmArgs = [...context.nodeArgs, "run", task, "--", ...context.args];
 
   return queue.add(() =>
     taskWrapper(
@@ -24,24 +30,9 @@ export function npmTask(taskId: TaskId, context: RunContext) {
             return resolve();
           }
 
-          const npmArgs = [
-            ...context.nodeArgs,
-            path.join(
-              path.dirname(process.execPath),
-              "node_modules/npm/bin/npm-cli.js"
-            ),
-            "run",
-            task,
-            "--",
-            ...context.args,
-          ];
+          logger.verbose(taskId, `Running ${[npmCmd, ...npmArgs].join(" ")}`);
 
-          logger.verbose(
-            taskId,
-            `Running ${[process.execPath, ...npmArgs].join(" ")}`
-          );
-
-          const cp = spawn(process.execPath, npmArgs, {
+          const cp = spawn(npmCmd, npmArgs, {
             cwd: path.dirname(allPackages[pkg].packageJsonPath),
             stdio: "pipe",
           });
