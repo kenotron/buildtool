@@ -19,7 +19,9 @@ import { cosmiconfigSync } from "cosmiconfig";
 const ConfigModuleName = "lage";
 
 function filterPackages(context: RunContext) {
-  const { allPackages, scope: scopes, deps: withDeps } = context;
+  const { allPackages, scope, deps: withDeps } = context;
+
+  let scopes = ([] as string[]).concat(scope);
 
   let scopedPackages =
     scopes && scopes.length > 0

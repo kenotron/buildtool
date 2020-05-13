@@ -3,37 +3,30 @@ import { getPackageTaskFromId } from "./taskId";
 import { spawn } from "child_process";
 import path from "path";
 
-import { cacheHits } from "../cache/backfill";
 import { RunContext } from "../types/RunContext";
-import { reportTaskLog } from "../reporter/ansiReporter";
+import { createLogger } from "../logger";
 import { taskWrapper } from "./taskWrapper";
-
-function stopAllNpmTasks(context: RunContext) {
-  const { queue } = context;
-  queue.pause();
-  queue.clear();
-}
+import { abort } from "./abortSignal";
 
 export function npmTask(taskId: TaskId, context: RunContext) {
   const [pkg, task] = getPackageTaskFromId(taskId);
   const { allPackages, queue } = context;
+
+  const logger = createLogger(taskId);
+  const prefix = `${pkg} ${task}`;
 
   return queue.add(() =>
     taskWrapper(
       taskId,
       () =>
         new Promise((resolve, reject) => {
-          if (cacheHits[pkg]) {
-            console.log(`Cache Hit! Skipping: ${pkg} - ${task}`);
-            return resolve();
-          }
-
           if (!allPackages[pkg].scripts[task]) {
-            console.log(`Empty script detected: ${pkg} - ${task}`);
+            logger.info("prefix", `Empty script detected: ${pkg} - ${task}`);
             return resolve();
           }
 
-          console.log(
+          logger.verbose(
+            prefix,
             `Running ${[
               process.execPath,
               ...context.nodeArgs,
@@ -43,8 +36,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
               ),
               "run",
               task,
-              "--",
-              ...context.args,
+              ...(context.args.length > 0 ? ["--", ...context.args] : []),
             ].join(" ")}`
           );
 
@@ -67,22 +59,34 @@ export function npmTask(taskId: TaskId, context: RunContext) {
             }
           );
 
+          context.events.once("abort", () => {
+            queue.pause();
+
+            context.measures.failedTask = taskId;
+            // kill the process in progress, but be gentle and let the process themselves take care of SIGTERM
+            cp.kill("SIGTERM");
+          });
+
           cp.stdout.on("data", (data) => {
-            data
-              .toString()
-              .split(/\n/)
-              .forEach((line) => {
-                reportTaskLog(taskId, line, context);
-              });
+            if (!cp.killed) {
+              data
+                .toString()
+                .split(/\n/)
+                .forEach((line) => {
+                  logger.verbose(prefix, line);
+                });
+            }
           });
 
           cp.stderr.on("data", (data) => {
-            data
-              .toString()
-              .split(/\n/)
-              .forEach((line) => {
-                reportTaskLog(taskId, line, context);
-              });
+            if (!cp.killed) {
+              data
+                .toString()
+                .split(/\n/)
+                .forEach((line) => {
+                  logger.verbose(prefix, line);
+                });
+            }
           });
 
           cp.on("exit", (code) => {
@@ -90,9 +94,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
               return resolve();
             }
 
-            stopAllNpmTasks(context);
-            console.log("Error detected");
-
+            abort(context);
             reject();
           });
         }),

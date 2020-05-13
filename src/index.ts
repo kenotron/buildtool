@@ -7,6 +7,7 @@ import os from "os";
 import PQueue from "p-queue/dist";
 import { cosmiconfigSync } from "cosmiconfig";
 import yargsParser from "yargs-parser";
+import { EventEmitter } from "events";
 
 const parsedArgs = yargsParser(process.argv.slice(2));
 
@@ -33,18 +34,23 @@ const context: RunContext = {
   tasks: new Map(),
   deps: parsedArgs.deps || configResults?.config.deps || false,
   scope: parsedArgs.scope || configResults?.config.scope || [],
-  measures: [],
+  measures: {
+    start: [0, 0],
+    duration: [0, 0],
+    taskStats: [],
+    failedTask: undefined,
+  },
   profiler: new Profiler({
     concurrency,
     outputDirectory: process.cwd(),
   }),
   taskLogs: new Map(),
   queue: new PQueue({ concurrency }),
-  taskStats: new Map(),
-  cache: false,
-  failFast: true,
+  cache: parsedArgs.cache === false ? false : true,
   nodeArgs: parsedArgs.nodeArgs ? arrifyArgs(parsedArgs.nodeArgs) : [],
   args: getPassThroughArgs(parsedArgs),
+  events: new EventEmitter(),
+  verbose: parsedArgs.verbose ? true : false,
 };
 
 discoverTaskDeps(context);
@@ -68,13 +74,15 @@ function arrifyArgs(args: { [key: string]: string | string[] }) {
   function pushValue(key: string, value: string) {
     let keyArg = "";
 
-    if (key.length === 1) {
-      keyArg = `-${key}`;
-    } else {
-      keyArg = `--${key}`;
-    }
-
     if (typeof value === "boolean") {
+      if (key.length === 1 && value) {
+        keyArg = `-${key}`;
+      } else if (value) {
+        keyArg = `--${key}`;
+      } else {
+        keyArg = `--no-${key}`;
+      }
+
       argsArray.push(keyArg);
     } else {
       argsArray.push(keyArg, value);
@@ -90,6 +98,7 @@ function getPassThroughArgs(args: { [key: string]: string | string[] }) {
     nodeArgs: _nodeArgValues,
     scope: _scopeArg,
     deps: _depsArg,
+    cache: _cacheArg,
     _: _positionals,
     ...filtered
   } = args;

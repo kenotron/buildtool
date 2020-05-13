@@ -4,35 +4,25 @@ import { getPackageTaskFromId, getTaskId } from "./taskId";
 import { cacheHits } from "../cache/backfill";
 import pGraph from "p-graph";
 import { generateCacheTasks, CachePutTask } from "../cache/cacheTasks";
-import {
-  initializePerformance,
-  markStart,
-  markEnd,
-  measure,
-  reportSummary,
-} from "../performance";
+import { reportSummary } from "../performance";
 
 export async function runTasks(context: RunContext) {
   const { command, profiler } = context;
 
-  initializePerformance(context);
-  markStart("all");
+  context.measures.start = process.hrtime();
 
   console.log(`Executing command "${command}"`);
 
   generateCacheTasks(context);
-
-  // console.dir({
-  //   tasks: context.tasks,
-  //   taskDepsGraph: context.taskDepsGraph,
-  // });
-
-  await pGraph(context.tasks, context.taskDepsGraph).run();
+  try {
+    await pGraph(context.tasks, context.taskDepsGraph).run();
+  } catch {
+    // passthru
+  }
 
   profiler.output();
 
-  markEnd("all");
-  measure("all");
+  context.measures.duration = process.hrtime(context.measures.start);
 
   await reportSummary(context);
 }

@@ -1,10 +1,21 @@
 import { TaskDepsGraph, Tasks, TaskId } from "./Task";
 import { PackageInfos } from "workspace-tools";
 import Profiler from "@lerna/profiler";
-import { PerformanceEntry } from "perf_hooks";
 import PQueue from "p-queue";
+import { EventEmitter } from "events";
 
-interface TaskStats {}
+interface TaskStats {
+  taskId: TaskId;
+  start: [number, number];
+  duration: [number, number];
+}
+
+interface Measures {
+  start: [number, number];
+  duration: [number, number];
+  failedTask?: string;
+  taskStats: TaskStats[];
+}
 
 export interface RunContext {
   taskDepsGraph: TaskDepsGraph;
@@ -15,13 +26,13 @@ export interface RunContext {
   scope: string[];
   deps: boolean;
   defaultPipeline: { [task: string]: string[] };
-  measures: PerformanceEntry[];
+  measures: Measures;
   profiler: Profiler;
   taskLogs: Map<TaskId, string[]>;
   queue: PQueue;
-  taskStats: Map<TaskId, TaskStats>;
   cache: boolean;
-  failFast: boolean;
   nodeArgs: string[];
   args: any;
+  events: EventEmitter;
+  verbose: boolean;
 }
