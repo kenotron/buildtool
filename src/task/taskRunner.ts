@@ -11,13 +11,16 @@ export async function runTasks(context: RunContext) {
   console.log(`Executing command "${command}"`);
 
   generateCacheTasks(context);
+
   try {
     await pGraph(context.tasks, context.taskDepsGraph).run();
   } catch {
-    // passthru
+    // passthru - we always want to print out the summary ourselves
   }
 
-  profiler.output();
+  if (context.profile) {
+    profiler.output();
+  }
 
   context.measures.duration = process.hrtime(context.measures.start);
 
