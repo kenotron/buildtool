@@ -16,27 +16,28 @@ export async function taskWrapper(
 
   const [pkg, task] = getPackageTaskFromId(taskId);
 
+  const start = process.hrtime();
+
   if (!cacheHits[pkg]) {
     if (!isCacheTask(task)) {
       info(taskId, "started");
     }
 
-    const start = process.hrtime();
-
-    await profiler.run(() => fn(allPackages[pkg], context), taskId);
-
-    if (!isCacheTask(task)) {
+    try {
+      await profiler.run(() => fn(allPackages[pkg], context), taskId);
       const duration = process.hrtime(start);
-
-      measures.taskStats.push({
-        taskId,
-        start,
-        duration,
-      });
-
-      info(taskId, `ended - took ${formatDuration(duration)}`);
+      if (!isCacheTask(task)) {
+        measures.taskStats.push({ taskId, start, duration, status: "success" });
+        info(taskId, `done - took ${formatDuration(duration)}`);
+      }
+    } catch (e) {
+      const duration = process.hrtime(start);
+      measures.taskStats.push({ taskId, start, duration, status: "failed" });
+      throw e;
     }
   } else if (!isCacheTask(task)) {
+    const duration = process.hrtime(start);
+    measures.taskStats.push({ taskId, start, duration, status: "skipped" });
     info(taskId, "skipped");
   }
 }

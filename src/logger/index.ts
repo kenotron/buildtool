@@ -1,6 +1,7 @@
 import log from "npmlog";
 import { getPackageTaskFromId } from "../task/taskId";
 import { RunContext } from "../types/RunContext";
+import chalk from "chalk";
 
 let _context: RunContext;
 
@@ -8,9 +9,9 @@ export function initialize(context: RunContext) {
   _context = context;
 }
 
-function getPrefix(taskId: string) {
+export function getTaskLogPrefix(taskId: string) {
   const [pkg, task] = getPackageTaskFromId(taskId);
-  return `${pkg} ${task}`;
+  return `${pkg} ${chalk.green(task)}`;
 }
 
 function addToTaskLog(taskId: string, message: string) {
@@ -24,22 +25,26 @@ function addToTaskLog(taskId: string, message: string) {
 
 export function info(taskId: string, message: string, ...args: any) {
   addToTaskLog(taskId, message);
-  return log.info(getPrefix(taskId), message, ...args);
+  return log.info(getTaskLogPrefix(taskId), chalk.cyan(message), ...args);
 }
 
 export function warn(taskId: string, message: string, ...args: any) {
   addToTaskLog(taskId, message);
-  return log.warns(getPrefix(taskId), message, ...args);
+  return log.warns(getTaskLogPrefix(taskId), chalk.yellow(message), ...args);
 }
 
 export function error(taskId: string, message: string, ...args: any) {
   addToTaskLog(taskId, message);
-  return log.error(getPrefix(taskId), message, ...args);
+  return log.error(getTaskLogPrefix(taskId), chalk.red(message), ...args);
 }
 
 export function verbose(taskId: string, message: string, ...args: any) {
   addToTaskLog(taskId, message);
-  return log.verbose(getPrefix(taskId), message, ...args);
+  return log.verbose(
+    getTaskLogPrefix(taskId),
+    chalk.underline(message),
+    ...args
+  );
 }
 
 export default { info, warn, error, verbose };

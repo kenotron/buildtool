@@ -8,6 +8,7 @@ interface TaskStats {
   taskId: TaskId;
   start: [number, number];
   duration: [number, number];
+  status: "failed" | "skipped" | "success" | "not started";
 }
 
 interface Measures {
@@ -35,4 +36,5 @@ export interface RunContext {
   args: any;
   events: EventEmitter;
   verbose: boolean;
+  profile: boolean;
 }

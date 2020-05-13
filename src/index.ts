@@ -10,12 +10,14 @@ import yargsParser from "yargs-parser";
 import { EventEmitter } from "events";
 import log from "npmlog";
 import { initialize } from "./logger";
+
 const parsedArgs = yargsParser(process.argv.slice(2));
 
 const root = findGitRoot(process.cwd());
 if (!root) {
   throw new Error("This must be called inside a git-controlled repo");
 }
+
 const ConfigModuleName = "lage";
 const configResults = cosmiconfigSync(ConfigModuleName).search(
   root || process.cwd()
@@ -23,6 +25,10 @@ const configResults = cosmiconfigSync(ConfigModuleName).search(
 
 const concurrency = os.cpus().length - 1;
 const command = parsedArgs._[0];
+
+const events = new EventEmitter();
+events.setMaxListeners(concurrency + 5);
+
 const context: RunContext = {
   allPackages: getPackageInfos(root),
   command,
@@ -50,8 +56,9 @@ const context: RunContext = {
   cache: parsedArgs.cache === false ? false : true,
   nodeArgs: parsedArgs.nodeArgs ? arrifyArgs(parsedArgs.nodeArgs) : [],
   args: getPassThroughArgs(parsedArgs),
-  events: new EventEmitter(),
-  verbose: parsedArgs.verbose ? true : false,
+  events,
+  verbose: parsedArgs.verbose,
+  profile: parsedArgs.profile,
 };
 
 initialize(context);
@@ -66,7 +73,9 @@ validateInput(context);
 
 discoverTaskDeps(context);
 
-runTasks(context);
+(async () => {
+  await runTasks(context);
+})();
 
 function arrifyArgs(args: { [key: string]: string | string[] }) {
   const argsArray: string[] = [];
