@@ -1,8 +1,0 @@
-{
-  "type": "minor",
-  "comment": "adding verbose logging",
-  "packageName": "lage",
-  "email": "kchau@microsoft.com",
-  "dependentChangeType": "patch",
-  "date": "2020-05-13T01:33:30.550Z"
-}
