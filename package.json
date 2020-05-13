@@ -5,7 +5,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
-    "lage": "dist/index.js"
+    "lage": "bin/lage.js"
   },
   "scripts": {
     "build": "tsc",
