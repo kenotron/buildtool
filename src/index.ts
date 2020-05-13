@@ -27,7 +27,6 @@ const concurrency = os.cpus().length - 1;
 const command = parsedArgs._[0];
 
 const events = new EventEmitter();
-events.setMaxListeners(concurrency + 5);
 
 const context: RunContext = {
   allPackages: getPackageInfos(root),
@@ -72,6 +71,8 @@ console.log(``);
 validateInput(context);
 
 discoverTaskDeps(context);
+
+events.setMaxListeners(context.tasks.size);
 
 (async () => {
   await runTasks(context);
