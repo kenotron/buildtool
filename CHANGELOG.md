@@ -1,8 +1,16 @@
 # Change Log - lage
 
-This log was last generated on Wed, 13 May 2020 01:33:46 GMT and should not be manually modified.
+This log was last generated on Wed, 13 May 2020 01:55:26 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 0.4.0
+
+Wed, 13 May 2020 01:55:26 GMT
+
+### Minor changes
+
+- better logging (kchau@microsoft.com)
 
 ## 0.3.0
 
