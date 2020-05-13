@@ -1,15 +1,15 @@
-import { getPackageInfos, findGitRoot } from "workspace-tools";
-import { RunContext } from "./types/RunContext";
+import { cosmiconfigSync } from "cosmiconfig";
 import { discoverTaskDeps } from "./task/discoverTaskDeps";
+import { EventEmitter } from "events";
+import { getPackageInfos, findGitRoot } from "workspace-tools";
+import { initialize } from "./logger";
+import { RunContext } from "./types/RunContext";
 import { runTasks } from "./task/taskRunner";
-import Profiler from "@lerna/profiler";
+import log from "npmlog";
 import os from "os";
 import PQueue from "p-queue/dist";
-import { cosmiconfigSync } from "cosmiconfig";
+import Profiler from "@lerna/profiler";
 import yargsParser from "yargs-parser";
-import { EventEmitter } from "events";
-import log from "npmlog";
-import { initialize } from "./logger";
 
 const parsedArgs = yargsParser(process.argv.slice(2));
 
