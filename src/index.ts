@@ -8,6 +8,7 @@ import PQueue from "p-queue/dist";
 import { cosmiconfigSync } from "cosmiconfig";
 import yargsParser from "yargs-parser";
 import { EventEmitter } from "events";
+import log from "npmlog";
 
 const parsedArgs = yargsParser(process.argv.slice(2));
 
@@ -52,6 +53,10 @@ const context: RunContext = {
   events: new EventEmitter(),
   verbose: parsedArgs.verbose ? true : false,
 };
+
+if (context.verbose) {
+  log.level = "verbose";
+}
 
 discoverTaskDeps(context);
 

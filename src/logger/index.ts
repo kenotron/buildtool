@@ -1,22 +1,4 @@
-// import { RunContext } from "../types/RunContext";
-// import { getPackageTaskFromId } from "../task/taskId";
 import log, { Logger } from "npmlog";
-
-// export function reportTaskLog(
-//   taskId: string,
-//   message: string,
-//   context: RunContext
-// ) {
-//   if (!context.taskLogs.has(taskId)) {
-//     context.taskLogs.set(taskId, []);
-//   }
-//   context.taskLogs.get(taskId)?.push(message);
-
-//   if (message && context.verbose) {
-//     const [pkg, task] = getPackageTaskFromId(taskId);
-//     process.stdout.write(`[${pkg} ${task}] ${message.trim()}\n`);
-//   }
-// }
 
 export function createLogger(taskId: string) {
   return log.newGroup(taskId) as Logger;

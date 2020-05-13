@@ -21,7 +21,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
       () =>
         new Promise((resolve, reject) => {
           if (!allPackages[pkg].scripts[task]) {
-            logger.info("prefix", `Empty script detected: ${pkg} - ${task}`);
+            logger.info(prefix, `Empty script detected: ${pkg} - ${task}`);
             return resolve();
           }
 
