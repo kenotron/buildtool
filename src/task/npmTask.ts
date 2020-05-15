@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 import path from "path";
 
 import { RunContext } from "../types/RunContext";
-import logger from "../logger";
+import logger, { NpmLogWritable } from "../logger";
 import { taskWrapper } from "./taskWrapper";
 import { abort } from "./abortSignal";
 import os from "os";
@@ -25,7 +25,7 @@ export function npmTask(taskId: TaskId, context: RunContext) {
       taskId,
       () =>
         new Promise((resolve, reject) => {
-          if (!allPackages[pkg].scripts[task]) {
+          if (!allPackages[pkg].scripts || !allPackages[pkg].scripts![task]) {
             logger.info(taskId, `Empty script detected, skipping`);
             return resolve();
           }
@@ -39,27 +39,11 @@ export function npmTask(taskId: TaskId, context: RunContext) {
 
           context.events.once("abort", terminate);
 
-          cp.stdout.on("data", (data) => {
-            if (!cp.killed) {
-              data
-                .toString()
-                .split(/\n/)
-                .forEach((line) => {
-                  logger.verbose(taskId, line.trim());
-                });
-            }
-          });
+          const stdoutLogger = new NpmLogWritable(taskId);
+          cp.stdout.pipe(stdoutLogger);
 
-          cp.stderr.on("data", (data) => {
-            if (!cp.killed) {
-              data
-                .toString()
-                .split(/\n/)
-                .forEach((line) => {
-                  logger.verbose(taskId, line.trim());
-                });
-            }
-          });
+          const stderrLogger = new NpmLogWritable(taskId);
+          cp.stderr.pipe(stderrLogger);
 
           cp.on("exit", (code) => {
             context.events.off("off", terminate);

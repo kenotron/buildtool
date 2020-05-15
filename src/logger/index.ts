@@ -1,6 +1,7 @@
 import log from "npmlog";
 import { getPackageTaskFromId } from "../task/taskId";
 import { RunContext } from "../types/RunContext";
+import { Writable } from "stream";
 import chalk from "chalk";
 
 let _context: RunContext;
@@ -45,6 +46,34 @@ export function verbose(taskId: string, message: string, ...args: any) {
     chalk.underline(message),
     ...args
   );
+}
+
+export class NpmLogWritable extends Writable {
+  private buffer: string = "";
+
+  constructor(private taskId: string) {
+    super();
+  }
+
+  _write(
+    chunk: Buffer,
+    encoding: string,
+    callback: (error?: Error | null) => void
+  ) {
+    let prev = 0;
+    let curr = 0;
+    while (curr < chunk.byteLength) {
+      if (chunk[curr] === 13 || (chunk[curr] === 10 && curr - prev > 1)) {
+        this.buffer = this.buffer + chunk.slice(prev, curr).toString().trim();
+        addToTaskLog(this.taskId, this.buffer);
+        log.verbose(getTaskLogPrefix(this.taskId), this.buffer);
+        this.buffer = "";
+        prev = curr;
+      }
+      curr++;
+    }
+    callback();
+  }
 }
 
 export default { info, warn, error, verbose };
