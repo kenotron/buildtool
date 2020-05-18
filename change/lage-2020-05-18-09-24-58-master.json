@@ -1,8 +1,0 @@
-{
-  "type": "patch",
-  "comment": "update backfill to latest",
-  "packageName": "lage",
-  "email": "kchau@microsoft.com",
-  "dependentChangeType": "patch",
-  "date": "2020-05-18T16:24:58.660Z"
-}
